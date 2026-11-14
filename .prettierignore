@@ -4,3 +4,7 @@ pnpm-lock.yaml
 # Prose owned by the PM and the designer; reviewed by people, not reformatted by tools
 CLAUDE.md
 docs/
+
+# Written by tools, for tools: their format is theirs to choose
+.claude/
+.impeccable/
