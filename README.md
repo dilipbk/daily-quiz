@@ -67,3 +67,17 @@ The `apps/` folders arrive with the tickets shown. Apps depend on packages; pack
 **Decisions** that choose a library, change a package boundary or depart from the spec get an ADR in the same pull request. See [`docs/adr/README.md`](docs/adr/README.md).
 
 **Secrets** never enter the repository. `.env` files are ignored by git; real values live in each platform's secret store (roadmap §7).
+
+## CI
+
+Every pull request runs `pnpm verify` and checks its commit messages ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)). The job is named `verify`, and the ruleset on `main` requires it: a failing typecheck, lint rule, format check or test blocks the merge.
+
+`main` takes changes through pull requests only. A branch must be up to date with `main` before it merges, and `main` can't be force-pushed or deleted.
+
+The ruleset is kept in [`.github/rulesets/main.json`](.github/rulesets/main.json). To apply it to a new repository, after the workflow has run once on a pull request:
+
+```bash
+gh api -X POST "repos/{owner}/{repo}/rulesets" --input .github/rulesets/main.json
+```
+
+GitHub enforces rulesets on a private repository only on a paid plan (Pro for a personal account, Team for an organization).
