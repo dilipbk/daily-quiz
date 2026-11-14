@@ -1,0 +1,16 @@
+{
+  "name": "@repo/game-rules",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Streak and day-boundary logic, XP, levels and badge rules, as pure functions.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repo/config": "workspace:*"
+  }
+}

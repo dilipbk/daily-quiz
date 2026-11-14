@@ -1,0 +1,16 @@
+{
+  "name": "@repo/quiz-engine",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Question-type schemas, graders, answer normalization and scoring.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repo/config": "workspace:*"
+  }
+}

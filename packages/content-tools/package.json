@@ -1,0 +1,16 @@
+{
+  "name": "@repo/content-tools",
+  "version": "0.0.0",
+  "private": true,
+  "description": "content:validate, import and drafting helpers.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repo/config": "workspace:*"
+  }
+}

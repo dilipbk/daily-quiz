@@ -1,0 +1,16 @@
+{
+  "name": "@repo/content-blocks",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Block schema and validation.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repo/config": "workspace:*"
+  }
+}

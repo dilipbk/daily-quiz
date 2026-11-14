@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build and tool output
+dist/
+coverage/
+*.tsbuildinfo
+.eslintcache
+
+# Secrets: environment files never enter the repository (roadmap §7, SEC-01)
+.env
+.env.*
+!.env.example
+
+# OS and editor
+.DS_Store
+*.log
