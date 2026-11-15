@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { runGradingFixtures } from '../../src/core/conformance.ts';
-import type { GradingFixture } from '../../src/core/conformance.ts';
+import { runGradingFixtures, runScoringFixtures } from '../../src/core/conformance.ts';
+import type { GradingFixture, ScoringFixture } from '../../src/core/conformance.ts';
 import { deepEqual } from '../../src/core/equal.ts';
 import { correct, incorrect, unanswered } from '../../src/core/module.ts';
+import { scoreSession, specScoringConfig } from '../../src/core/scoring.ts';
 import { toyRegistry } from '../support/toy-types.ts';
 
 const tunables = { toy_word: { ignoreCase: true } };
@@ -68,6 +69,69 @@ describe('runGradingFixtures', () => {
 
   it('no fixtures, no failures', () => {
     expect(runGradingFixtures(toyRegistry, [], tunables)).toEqual({ ran: 0, failures: [] });
+  });
+});
+
+describe('runScoringFixtures', () => {
+  const oneCorrect = [
+    {
+      grade: correct(),
+      difficultyMultiplier: 0.8,
+      timing: { timed: true, elapsedMs: 4_000, standardLimitMs: 20_000 },
+    },
+  ] as const;
+
+  it('reports each failing scoring fixture by id with expected and actual', () => {
+    const expected = {
+      answers: [{ base: 80, speedBonus: 32, combo: 0, total: 112, streak: 1 }],
+      totalPoints: 112,
+      correctCount: 1,
+      questionCount: 1,
+    };
+    const fixtures: ScoringFixture[] = [
+      {
+        id: 'scoring/passes',
+        cites: ['§10.5'],
+        config: specScoringConfig,
+        inputs: oneCorrect,
+        expected,
+      },
+      {
+        id: 'scoring/wrong-expectation',
+        cites: ['§10.5'],
+        config: specScoringConfig,
+        inputs: oneCorrect,
+        expected: { ...expected, totalPoints: 120 },
+      },
+    ];
+
+    expect(runScoringFixtures(fixtures)).toEqual({
+      ran: 2,
+      failures: [
+        {
+          id: 'scoring/wrong-expectation',
+          expected: { ...expected, totalPoints: 120 },
+          actual: expected,
+        },
+      ],
+    });
+  });
+
+  it("scores each fixture with the fixture's own config", () => {
+    const doubled = { ...specScoringConfig, basePoints: 200 };
+
+    expect(
+      runScoringFixtures([
+        {
+          id: 'scoring/own-config',
+          cites: ['§10.5'],
+          config: doubled,
+          inputs: oneCorrect,
+          expected: scoreSession(oneCorrect, doubled),
+        },
+      ]),
+    ).toEqual({ ran: 1, failures: [] });
+    expect(scoreSession(oneCorrect, doubled).totalPoints).toBe(224);
   });
 });
 

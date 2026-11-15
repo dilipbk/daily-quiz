@@ -20,11 +20,11 @@ The plan is approved. Build it as written, with these rulings. Where a ruling an
 
 1. **R1 is in scope.** The engine derives the Standard limit, and Task 4 stays. The server calls it once when it builds a session and stores the result in the snapshot.
 2. **R3 stands.** The first correct answer earns no combo: the n-th consecutive correct answer earns `min(10 × (n − 1), 50)`. The owner is told in the report and may overturn it, so keep it to one function and one fixture.
-3. **R2 and R4 to R11 stand as read.** Record all eleven readings in ADR 0010.
+3. **R2 and R4 to R11 stand as read.** Record all eleven readings in ADR 0021.
 4. **ENG-01's real names.** `@repo/content-blocks` exports `blocksSchema` (a `z.array` that already requires at least one block), `imageBlockSchema` (alt text required), and the types `Block` and `ImageBlock`. Use `blocksSchema` and `Block[]` where this plan says `contentBlocksSchema` and `ContentBlocks`. Assumptions A2, A4 and A5 hold as written.
 5. **Branch.** `feat/ENG-02-quiz-engine` is stacked on `feat/ENG-01-content-blocks` (pull request 4). That replaces the note about branching from `main` after ENG-01 merges.
 6. **RegExp syntax.** Keep the constraint as written: explicit ranges fit R9. Its stated reason is out of date. Hermes' `doc/RegExp.md` lists Unicode property escapes and lookbehind as supported, and `content-blocks` uses `\p{…}`. The proof on a device belongs to the FND-05 smoke build.
-7. **ADR numbers.** 0009 for question types as registry modules, 0010 for the grading and scoring readings. Numbers 0003 to 0008 are taken by other tickets.
+7. **ADR numbers.** 0020 for question types as registry modules, 0021 for the grading and scoring readings. Numbers 0003 to 0010 are taken by other tickets (0009 and 0010 went to another ticket after this plan was approved).
 8. **Shared config, first step of Task 1, in its own commit.** Move `allowImportingTsExtensions` into `packages/config/tsconfig/base.json` and remove it from `packages/content-blocks/tsconfig.json`. Pin zod once in a pnpm catalog and point both packages at it.
 9. **Review.** After Task 10, a fresh reviewer and `security-review` read the whole branch before the report, as the plan recommends.
 
@@ -709,7 +709,7 @@ export function describeRegistryProperties(
 - Consumes: `Grade` and its constructors (Task 1), `gradeAnswer` (Task 2).
 - Produces: everything under `core/scoring.ts` and `evaluateSession` in Public API.
 
-- [ ] **Step 1: Write the failing unit tests.** `C` is `specScoringConfig`; `timed(e, l)` is `{ timed: true, elapsedMs: e, standardLimitMs: l }`.
+- [x] **Step 1: Write the failing unit tests.** `C` is `specScoringConfig`; `timed(e, l)` is `{ timed: true, elapsedMs: e, standardLimitMs: l }`.
 
 ```ts
 it('§10.5 base points are 100 × the difficulty multiplier', () => {
@@ -804,7 +804,7 @@ Further cases, one `it` each:
 | `session.test.ts › evaluateSession grades then scores, in order`               | Three toy items (correct, `null`, correct) with the spec config give grades `[correct, unanswered, correct]`, `correctCount` 2, `questionCount` 3, and the second correct answer's combo is 0                                         |
 | `session.test.ts › scoreSession of no answers`                                 | `{ answers: [], totalPoints: 0, correctCount: 0, questionCount: 0 }`                                                                                                                                                                  |
 
-- [ ] **Step 2: Write the failing properties** in `tests/core/scoring.properties.test.ts`. Arbitraries: a valid `ScoringConfig`; grades from the four constructors with any credit; multipliers 0.5–2; `elapsedMs` 0–120 000; `standardLimitMs` 1 000–60 000.
+- [x] **Step 2: Write the failing properties** in `tests/core/scoring.properties.test.ts`. Arbitraries: a valid `ScoringConfig`; grades from the four constructors with any credit; multipliers 0.5–2; `elapsedMs` 0–120 000; `standardLimitMs` 1 000–60 000.
   - `total is base + speedBonus + combo, and every part is a finite integer ≥ 0`.
   - `the speed bonus never exceeds round(base × speedBonusMaxRatio) and never rises as elapsed time rises`.
   - `D13: at or beyond the Standard limit the speed bonus is 0`.
@@ -812,10 +812,10 @@ Further cases, one `it` each:
   - `combo is min(comboStep × (streak − 1), comboCap) on a correct answer and 0 otherwise`.
   - `scoreSession equals folding scoreAnswer over the inputs`, and `totalPoints` is the sum of the totals.
   - `difficultyMultiplier is monotonic in the rating and stays within [minMultiplier, maxMultiplier]`.
-- [ ] **Step 3: Run and see them fail** (`scoring.ts` missing).
-- [ ] **Step 4: Implement** to the arithmetic block in Public API. `round` is `Math.round`.
-- [ ] **Step 5: Run and see them pass**, then `pnpm verify`.
-- [ ] **Step 6: Commit.** `feat(quiz-engine): score answers and sessions from tunables passed in (ENG-02)`
+- [x] **Step 3: Run and see them fail** (`scoring.ts` missing).
+- [x] **Step 4: Implement** to the arithmetic block in Public API. `round` is `Math.round`.
+- [x] **Step 5: Run and see them pass**, then `pnpm verify`.
+- [x] **Step 6: Commit.** `feat(quiz-engine): score answers and sessions from tunables passed in (ENG-02)`
 
 ### Task 4: The Standard limit (R1; drop this task if the PM rules it out)
 
