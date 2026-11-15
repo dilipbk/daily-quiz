@@ -59,6 +59,16 @@ describe('ordering questions', () => {
     ).toContainEqual(['payload', 'items']);
   });
 
+  it('a list over its cap is refused for its size alone, before its items are compared', () => {
+    const same = Array.from({ length: 2_000 }, () => item('mars'));
+    const order = same.map((entry) => entry.id);
+
+    expect(issuePaths(question(same, order))).toEqual([
+      ['payload', 'items'],
+      ['key', 'order'],
+    ]);
+  });
+
   it("refuses a key that isn't a permutation of the item ids", () => {
     const missing = ['mercury', 'venus', 'earth'];
     const repeated = ['mercury', 'mercury', 'earth', 'mars'];

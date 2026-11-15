@@ -50,6 +50,15 @@ describe('single_choice and image_choice questions', () => {
     expect(issuePaths(imageChoice(imageOptions(...five)))).toEqual([['payload', 'options']]);
   });
 
+  it('a list over its cap is refused for its size alone, before its options are compared', () => {
+    const same = Array.from({ length: 2_000 }, () => ({ id: 'a', content: text('Earth') }));
+    const started = Date.now();
+
+    expect(issuePaths(singleChoice(same, 'z'))).toEqual([['payload', 'options']]);
+    // Comparing every pair of 2,000 options would be two million structural comparisons.
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
   it('refuses duplicate option ids', () => {
     const [earth, mars] = textOptions('Earth', 'Mars');
     const [earthImage, marsImage] = imageOptions('earth', 'mars');

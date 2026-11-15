@@ -332,7 +332,7 @@ describe('type_answer questions', () => {
       ['key', 'accepted', 0],
     ]);
     expect(issuePaths(textQuestion({ accepted: ['x'.repeat(120)] }))).toEqual([]);
-    expect(issuePaths(textQuestion({ accepted: [''] }))).toContainEqual(['key', 'accepted', 0]);
+    expect(issuePaths(textQuestion({ accepted: [''] }))).toEqual([['key', 'accepted', 0]]);
     expect(issuePaths(textQuestion({ accepted: ['Paris'], rejected: twentyOne }))).toEqual([
       ['key', 'rejected'],
     ]);
@@ -384,6 +384,15 @@ describe('type_answer questions', () => {
         textQuestion({ accepted: ['Australia', 'Österreich'], rejected: ['osterreich.'] }),
       ),
     ).toEqual([['key', 'rejected', 0]]);
+  });
+
+  it('a key over its caps is refused for its size alone, before its entries are compared', () => {
+    const many = Array.from({ length: 5_000 }, () => '!!!');
+
+    expect(issuePaths(textQuestion({ accepted: many, rejected: many }))).toEqual([
+      ['key', 'accepted'],
+      ['key', 'rejected'],
+    ]);
   });
 
   it('refuses properties the schemas do not name', () => {

@@ -119,6 +119,43 @@ describe('createRegistry', () => {
     expect(seen).toEqual([{ payload: { size: 2 }, key: { value: true } }]);
   });
 
+  it("a module's check doesn't run on a value refused for its size or by a refinement", () => {
+    const seen: unknown[] = [];
+    const recorder = defineQuestionType({
+      type: 'recorder',
+      timeClass: 'choice',
+      payloadSchema: z.strictObject({ names: z.array(z.string().min(1)).max(2) }),
+      keySchema: z.strictObject({ value: z.number().refine((value) => value !== 13) }),
+      responseSchema: z.strictObject({ value: z.number() }),
+      check: (question) => {
+        seen.push(question);
+        return [{ path: ['key', 'value'], message: 'Checked.' }];
+      },
+      grade: () => incorrect(),
+    });
+    const { questionSchema } = createRegistry([recorder]);
+    const question = (names: string[], value: number) => ({
+      type: 'recorder',
+      payload: { names },
+      key: { value },
+    });
+
+    // A list over its cap is exactly what a check must not be handed: it may compare every pair.
+    const tooMany = questionSchema.safeParse(question(['a', 'b', 'c'], 1));
+    const tooShort = questionSchema.safeParse(question([''], 1));
+    const refined = questionSchema.safeParse(question(['a'], 13));
+
+    expect(tooMany.error?.issues.map((issue) => issue.path)).toEqual([['payload', 'names']]);
+    expect(tooShort.error?.issues.map((issue) => issue.path)).toEqual([['payload', 'names', 0]]);
+    expect(refined.error?.issues.map((issue) => issue.path)).toEqual([['key', 'value']]);
+    expect(refined.error?.issues[0]?.message).not.toBe('Checked.');
+    expect(seen).toEqual([]);
+
+    const sound = questionSchema.safeParse(question(['a', 'b'], 1));
+    expect(sound.error?.issues).toMatchObject([{ path: ['key', 'value'], message: 'Checked.' }]);
+    expect(seen).toEqual([{ payload: { names: ['a', 'b'] }, key: { value: 1 } }]);
+  });
+
   it('builds a tunables schema keyed by type, only for modules that declare one', () => {
     const { tunablesSchema } = toyRegistry;
 

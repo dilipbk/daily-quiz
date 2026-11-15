@@ -121,8 +121,12 @@ export function createRegistry<const M extends readonly AnyQuestionTypeModule[]>
     });
     if (check === undefined) return fields;
 
-    // zod runs this only once the fields above have parsed, so `check` can trust what it is given.
+    // `check` trusts what it is given, bounds included, so it runs only on a question whose fields
+    // raised nothing. zod alone skips it after a value of the wrong type or a list over its cap,
+    // but not after a string out of bounds or a failed refinement.
     return fields.superRefine(({ payload, key }, context) => {
+      if (context.issues.length > 0) return;
+
       for (const issue of check({ payload, key })) {
         context.addIssue({ code: 'custom', message: issue.message, path: [...issue.path] });
       }
