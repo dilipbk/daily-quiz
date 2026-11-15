@@ -272,7 +272,7 @@ Edge cases walked before the report: empty input, bad input, duplicates and retr
 
 ## Not provable in this ticket
 
-- **Hermes.** These tests run on Node. That `Intl.DateTimeFormat.prototype.format` gives the same digits on iOS and Android Hermes is documented but not exercised here. The report proposes a small on-device check (FND-05 or FE-07): `new Intl.DateTimeFormat('en-US', { timeZone: 'Pacific/Kiritimati', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(0))` should be `01/01/1970`.
+- **Hermes.** These tests run on Node. That `Intl.DateTimeFormat.prototype.format` gives the same digits on iOS and Android Hermes is documented but not exercised here. The report proposes a small on-device check (FND-05 or FE-07): `new Intl.DateTimeFormat('en-US', { timeZone: 'Pacific/Kiritimati', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(Date.UTC(2026, 5, 15, 10, 30)))` should be `06/16/2026`.
 - **ADR numbers.** 0003 to 0005 are the next free numbers on `main` today. If FND-03's ADRs merge first, they are renumbered at rebase.
 
 ## Proposed tickets (for the report)
@@ -293,3 +293,15 @@ The plan was approved by the owner and built as written, with these differences:
 - `levelsGained` returns 0 when the XP total falls, as when the server's total replaces a higher optimistic one.
 - A daily-goal target of 0 from remote config counts as met.
 - The fast-check commit is scoped `chore(repo)`, and the tests tsconfig went in with the first feature commit so every commit typechecks.
+
+## After the PM's review (2026-11-15)
+
+The PM returned the pull request with eight findings from an independent reviewer. What changed:
+
+- `localDateOf` and `isValidTimeZone` refuse a missing zone. They used to read it as the host's own.
+- Reading 7 above is narrowed: `best` is the longest streak in the replay, not a high-water mark. A late sync can lower `best` and can end a streak that looked alive. The PM ruled that the derivation stays; ADR 0004 records the consequence and what BE-06 and BE-11 must store.
+- The test helpers in `tests/support/zones.ts` take every date from the zone's UTC offset and never call `localDateOf`, so the DST streak tests fail when `localDateOf` is wrong.
+- Tests were added for an odd Practice total, for level steps that are not whole numbers, and for a calendar day a zone skipped.
+- The Hermes check in this plan and in ADR 0005 expected the wrong date for 1970 and now uses an instant in 2026.
+- ADR 0005 names two cases for BE-06: server zone data older than a phone's, and a zone the server doesn't know.
+- `docs/traceability.md` was edited at the PM's request: the STK-03 scope text now matches ADR 0003. Its status stays `todo`.

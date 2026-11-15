@@ -25,10 +25,10 @@ The ticket went back as `NEEDS GRILLING`. The owner ruled on 2026-11-15 by accep
 |---|---|---|
 | Qualifying session (STK-01) | A completed session that is not a Practice replay and is a Global Daily, a Daily 5, or any other source with five or more questions, challenges included. The score doesn't matter. | `streak.minQuestions` = 5 |
 | Earning freezes (STK-04, STK-06) | Each milestone grants one. A grant while holding the maximum is lost. A new player holds none. After a break, the new streak's milestones grant again. | `streak.milestones`, `streak.freezesPerMilestone` = 1, `streak.maxFreezesHeld` = 2 |
-| Spending freezes (STK-04) | A freeze covers a missed day as soon as that day is over; two held cover two days in a row; freezes spent before a break stay spent. If the missed day's session syncs later, the freeze is back. | |
+| Spending freezes (STK-04) | A freeze covers a missed day as soon as that day is over; two held cover two days in a row; freezes spent before a break stay spent. If the missed day's session syncs later, the whole history is replayed with that day credited. The freeze it had spent is usually back, but the replay can also change what followed; see the consequences. | |
 | Frozen days (STK-01) | A frozen day keeps the streak alive and doesn't add to its count. | |
 | Day credited (STK-03, OFF-04) | The local date at the moment of completion, not at the session's start. | |
-| Best streak | The longest count ever reached. It survives a break. | |
+| Best streak | The longest streak in the replay of the credited dates. It survives a break. It is not a high-water mark; see the consequences. | |
 | Level curve (XP-02) | Going from level L to L+1 costs `stepXp × L`. Reaching level L takes `stepXp × L × (L − 1) / 2`. No top level. | `levels.stepXp` = 20 |
 | Session XP (XP-01) | 10 for any completed session of any source, 2 per correct answer, 10 more when every answer is correct. Relaxed earns the same. | `xp.perSession`, `xp.perCorrectAnswer`, `xp.perfectBonus` |
 | Practice XP (PLAY-02, DLY-03) | A replayed daily earns 0. Any other Practice replay earns half the formula, rounded down. | `xp.practiceFactor` = 0.5 |
@@ -50,6 +50,8 @@ With a step of 20, level 2 arrives at 20 XP (a first Global Daily with five righ
 ## Consequences
 
 - The defaults live in `DEFAULT_GAME_RULES` and a test pins them to this table. Remote config can change any of them without a release; a running session keeps the values it started with.
-- Because freezes and milestones are replayed from the set of credited dates, BE-11 must award a milestone's badge by a unique key and not by counting events: a late sync can move the date a milestone was reached.
+- A late sync replays the whole history, and the result can be worse for the player than it was before the session arrived. One more credited day can move a milestone earlier, to a moment when two freezes were already held. That grant is lost, and a later missed day then finds no freeze. Example: days 1 to 7, 9 to 30, 32 and 35 give a streak of 31; when day 8 syncs late, the streak is 1. In 60,000 random histories the PM's reviewer found that one extra credited date lowered `current` 12,697 times and `best` 2,764 times. The PM ruled on 2026-11-15 that the derivation stays, because arrival order must not change a streak.
+- `best` from the replay is not a high-water mark. Besides the case above, a date credited ahead of today (after a flight west) counts toward `best` until the day before it is over and turns out to have been missed.
+- So BE-06 and BE-11 store `best` as a high-water mark that only rises, award a milestone's badge by a unique key and not by counting events, and never withdraw a milestone already celebrated.
 - After day 100 the next free freeze is at day 365. A long-streak player who spends both has none for most of a year, until V1 adds coins and Premium. If that proves harsh in beta, an extra grant every 30 streak days is one more tunable.
 - FND-06 folds this table into spec v1.1.

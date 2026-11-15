@@ -34,6 +34,7 @@ A qualifying session is credited to the calendar date in the device's IANA time 
 
 - Each session's day depends on that session alone. BE-06 can keep one append-only row per player and local date, and arrival order can't change a streak. `streakFromCompletions` in `packages/game-rules` has property tests for both.
 - Travel needs no special case. A flight west repeats a calendar date, which counts once. A flight east can skip a calendar date, which a freeze covers like any missed day.
+- A calendar day that a zone itself skipped counts as a missed day: a freeze covers it, or the streak ends. Apia had no 30 December 2011, so sessions there on 28, 29 and 31 December and 1 January give a streak of 2. Five such days exist between 1970 and 2040 (Kwajalein 1993-08-21, Enderbury and Kiritimati 1994-12-31, Apia and Fakaofo 2011-12-30), none after 2011.
 - A player who changes the phone's zone on purpose can keep a streak on one sitting every 72 hours. Frequent zone changes become a plausibility signal the server can log and act on (OFF-04, SEC-05); that is a later ticket.
 - FND-06 folds this into spec v1.1.
 - Revisit if a streak ever feeds a ranking or pays out something of value, or if the plausibility signal shows the cheat is common.
