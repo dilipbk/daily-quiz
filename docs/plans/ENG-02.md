@@ -910,6 +910,8 @@ The three algorithms are decisions, so they are fixed here.
 7. Collapse each run of `\s` to one space and trim.
 8. Take the primary subtag of `locale` (lower-cased, up to the first `-` or `_`). If the string starts with one of `articles[subtag]` followed by a space and something remains after it, drop that article once.
 
+> **As built (2026-11-15), three deviations, each from a counterexample.** (a) Step 8 drops _every_ leading article, not one: dropping one left "The A-Team" as `a team` and "A-Team" as `team`, and made "The The The" not idempotent. (b) Step 2 also folds the final sigma `ς` into `σ`: lower-casing chooses between them by what follows, and steps 5 and 6 change what follows ("ΑΣ(Α" gave `αςα`, then `ασα`). Repeating steps 1–4 could not fix either. (c) In step 6 the ignored characters go first and the dot-and-comma rule runs on what is left, so a zero-width space inside "3.14" does not turn it into `314`.
+
 ```text
 separators (step 5):  - ‐ ‑ ‒ – — ― _ / \
 ignored (step 6):     ; : ! ? ¡ ¿ ' ’ ‘ ‛ " “ ” „ « » ` ´ ( ) [ ] { } … ·
@@ -930,7 +932,7 @@ If the idempotence property finds a counterexample, repeat steps 1–4 until the
 6. One kind, once: the decimal reading always; and the grouping reading too when exactly three digits follow it and one to three digits precede it, the first not `0`.
 7. Return the finite readings.
 
-- [ ] **Step 1: Write the failing unit tests.** `en` is `{ en: ['the', 'a', 'an'] }`.
+- [x] **Step 1: Write the failing unit tests.** `en` is `{ en: ['the', 'a', 'an'] }`.
 
 | Test name                                                                      | Cases (`input` → `expected`, locale `en` unless stated)                                                                                                                                                                                                             |
 | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -946,7 +948,7 @@ If the idempotence property finds a counterexample, repeat steps 1–4 until the
 | `parseNumberReadings returns both readings when one separator is ambiguous`    | `1,000` and `1.000` → 1 and 1000 (either order); `12.345` → 12.345 and 12345; `0,500` → `[0.5]`; `1234,567` → `[1234.567]`                                                                                                                                          |
 | `parseNumberReadings refuses what isn't a plain number`                        | `1e3`, `1/2`, `0x10`, `five`, `NaN`, `Infinity`, `1.2.3,4.5`, `5.`, `--5`, `5 km`, empty string → `[]`                                                                                                                                                              |
 
-- [ ] **Step 2: Write the failing properties** (`fc.string({ unit: 'grapheme' })` and `fc.string({ unit: 'binary' })`, plus the explicit examples `'\uD800'` and `'a\uDFFFb'`):
+- [x] **Step 2: Write the failing properties** (`fc.string({ unit: 'grapheme' })` and `fc.string({ unit: 'binary' })`, plus the explicit examples `'\uD800'` and `'a\uDFFFb'`):
   - `normalization is idempotent`.
   - `normalization ignores letter case` (`normalize(s.toUpperCase())` and `normalize(s.toLowerCase())` equal `normalize(s)`).
   - `normalization gives the same result for the NFC and NFD forms of a string`.
@@ -954,8 +956,8 @@ If the idempotence property finds a counterexample, repeat steps 1–4 until the
   - `normalization never throws, lone surrogates included`.
   - `editDistance is symmetric, is 0 exactly for equal strings, and agrees with an unbounded reference when the result is ≤ max` (the reference is a plain full-matrix implementation in the test file).
   - `a number written in English, German or plain form is among its own readings` (integers and decimals with up to six places, formatted by helpers in the test).
-- [ ] **Step 3: Run, fail. Step 4: Implement. Step 5: Run, pass; `pnpm verify`.**
-- [ ] **Step 6: Commit.** `feat(quiz-engine): normalize typed answers without reading a locale (ENG-02)`
+- [x] **Step 3: Run, fail. Step 4: Implement. Step 5: Run, pass; `pnpm verify`.**
+- [x] **Step 6: Commit.** `feat(quiz-engine): normalize typed answers without reading a locale (ENG-02)`
 
 ### Task 8: `type_answer`
 
