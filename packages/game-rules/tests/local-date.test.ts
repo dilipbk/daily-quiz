@@ -8,7 +8,7 @@ import {
   localDateOf,
   parseLocalDate,
 } from '../src/local-date.ts';
-import { allZones } from './support/zones.ts';
+import { allZones, offsetChanges2026, offsetMinutes } from './support/zones.ts';
 
 const HOUR_MS = 3_600_000;
 const at = (iso: string): number => Date.parse(iso);
@@ -90,6 +90,35 @@ describe('localDateOf (STK-03)', () => {
         expect(localDateOf(earlier, zone) <= localDateOf(later, zone)).toBe(true);
       }),
     );
+  });
+});
+
+describe("localDateOf, against the zone's own UTC offset", () => {
+  // A second route to the same answer: shift the instant by the zone's offset and read the
+  // UTC date. The streak properties build their days with `localDateOf`, so this is what
+  // checks `localDateOf` itself across DST in every zone.
+  const dateFromOffset = (t: number, zone: string): string =>
+    utcDate(t + offsetMinutes(t, zone) * 60_000);
+
+  it('agrees at any instant, in any zone', () => {
+    fc.assert(
+      fc.property(zone, instant, (zone, t) => {
+        expect(localDateOf(t, zone)).toBe(dateFromOffset(t, zone));
+      }),
+      { numRuns: 500 },
+    );
+  });
+
+  it('agrees every half hour around every clock change of 2026, in every zone', () => {
+    for (const { zone, date } of offsetChanges2026()) {
+      const utcMidnight = Date.parse(`${date}T00:00:00Z`);
+      // The local day of the change lies between 14 hours before and 36 hours after this.
+      for (let t = utcMidnight - 16 * HOUR_MS; t <= utcMidnight + 40 * HOUR_MS; t += HOUR_MS / 2) {
+        expect(localDateOf(t, zone), `${zone} at ${new Date(t).toISOString()}`).toBe(
+          dateFromOffset(t, zone),
+        );
+      }
+    }
   });
 });
 
