@@ -1,6 +1,8 @@
+import fc from 'fast-check';
 import * as z from 'zod';
 import { correct, defineQuestionType, incorrect } from '../../src/core/module.ts';
 import { createRegistry } from '../../src/core/registry.ts';
+import type { TypeKit } from './registry-properties.ts';
 
 // Two question types that exist only in tests. The core is built and proven against them before
 // any real type exists, which is what shows it depends on none of the real ones (QT-01).
@@ -34,3 +36,30 @@ export const toyWord = defineQuestionType({
 });
 
 export const toyRegistry = createRegistry([toyFlag, toyWord]);
+
+// The same fold the grader applies, so a response the kit calls wrong is wrong with either setting.
+const sameWord = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
+
+/** How to draw and answer each toy type, for the properties every registry must hold. */
+export const toyKits: TypeKit[] = [
+  {
+    type: toyFlag.type,
+    question: fc.boolean().map((value) => ({ type: toyFlag.type, payload: {}, key: { value } })),
+    correctResponse: (question) => ({ value: toyFlag.keySchema.parse(question.key).value }),
+    wrongResponse: (question) =>
+      fc.constant({ value: !toyFlag.keySchema.parse(question.key).value }),
+  },
+  {
+    type: toyWord.type,
+    question: fc
+      .tuple(fc.string({ unit: 'grapheme' }), fc.string({ unit: 'grapheme', minLength: 1 }))
+      .filter(([hint, word]) => hint !== word)
+      .map(([hint, word]) => ({ type: toyWord.type, payload: { hint }, key: { word } })),
+    correctResponse: (question) => ({ word: toyWord.keySchema.parse(question.key).word }),
+    wrongResponse: (question) =>
+      fc
+        .string({ unit: 'grapheme' })
+        .filter((word) => !sameWord(word, toyWord.keySchema.parse(question.key).word))
+        .map((word) => ({ word })),
+  },
+];

@@ -668,7 +668,7 @@ export function describeRegistryProperties(
 ): void;
 ```
 
-- [ ] **Step 1: Write the failing unit tests.**
+- [x] **Step 1: Write the failing unit tests.**
 
 | File · test name                                                                    | Asserts (toy registry, tunables `{ toy_word: { ignoreCase: true } }`, locale `'en'`)                                                                                |
 | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -683,7 +683,7 @@ export function describeRegistryProperties(
 | `› a fixture's own tunables replace the runner's`                                   | A `toy_word` fixture with `tunables: { toy_word: { ignoreCase: false } }` grades case-sensitively                                                                   |
 | `› deepEqual compares plain JSON structurally`                                      | Key order doesn't matter; array order does; `0` and `-0` are equal; a missing key and an `undefined` value are equal                                                |
 
-- [ ] **Step 2: Write the generic property suite** `describeRegistryProperties`. Each bullet is one `it`, run for every kit:
+- [x] **Step 2: Write the generic property suite** `describeRegistryProperties`. Each bullet is one `it`, run for every kit:
   - `QT-02: grading the same question and answer twice gives deep-equal grades` (answers from `fc.oneof(correct, wrong, fc.jsonValue())`).
   - `graders are total: any JSON value as the answer yields a grade and never throws` (`fc.jsonValue()`).
   - `grade invariants hold`: correct ⇔ credit 1; unanswered or invalid ⇒ credit 0; incorrect ⇒ 0 ≤ credit < 1; `reason` is present exactly when the status is `invalid`.
@@ -692,10 +692,10 @@ export function describeRegistryProperties(
   - `an answer tagged with any other registered type is invalid: type_mismatch`.
   - `every generated question parses, and its player form parses and has no key`.
   - `graders are pure: deep-frozen inputs are not mutated` (deep-freeze question, answer and tunables; grade; no throw; inputs deep-equal a JSON copy taken before; `structuredClone` isn't in the ES2022 library the tests compile against).
-- [ ] **Step 3:** `tests/core/grading.properties.test.ts` calls `describeRegistryProperties('toy registry', toyRegistry, toyKits, …)`. Run: FAIL, `grading.ts` missing.
-- [ ] **Step 4: Implement** `grading.ts`, `conformance.ts`, `equal.ts`. `gradeAnswer` order: unknown type → `null`/`undefined` → not `{ type, response }` → type differs → `responseSchema.safeParse` fails → `module.grade`.
-- [ ] **Step 5: Run and see them pass**, then `pnpm verify`.
-- [ ] **Step 6: Commit.** `feat(quiz-engine): grade through the registry and run fixtures without a test runner (ENG-02)`
+- [x] **Step 3:** `tests/core/grading.properties.test.ts` calls `describeRegistryProperties('toy registry', toyRegistry, toyKits, …)`. Run: FAIL, `grading.ts` missing.
+- [x] **Step 4: Implement** `grading.ts`, `conformance.ts`, `equal.ts`. `gradeAnswer` order: unknown type → `null`/`undefined` → not `{ type, response }` → type differs → `responseSchema.safeParse` fails → `module.grade`.
+- [x] **Step 5: Run and see them pass**, then `pnpm verify`.
+- [x] **Step 6: Commit.** `feat(quiz-engine): grade through the registry and run fixtures without a test runner (ENG-02)`
 
 ### Task 3: Scoring and session evaluation
 
