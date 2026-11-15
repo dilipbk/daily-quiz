@@ -3,6 +3,7 @@ import { imageChoiceFixtures } from './image-choice.ts';
 import { orderingFixtures } from './ordering.ts';
 import { singleChoiceFixtures } from './single-choice.ts';
 import { trueFalseFixtures } from './true-false.ts';
+import { typeAnswerFixtures } from './type-answer.ts';
 
 // The fixtures the app and the server both run (spec QT-02): questions, answers and the grade
 // each must get. Data only, so they run under any test runner and on a device. A new question
@@ -12,5 +13,6 @@ export const gradingFixtures: readonly GradingFixture[] = [
   ...singleChoiceFixtures,
   ...trueFalseFixtures,
   ...imageChoiceFixtures,
+  ...typeAnswerFixtures,
   ...orderingFixtures,
 ];

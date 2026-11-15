@@ -4,6 +4,7 @@ import { imageChoice } from '../../src/types/image-choice.ts';
 import { ordering } from '../../src/types/ordering.ts';
 import { singleChoice } from '../../src/types/single-choice.ts';
 import { trueFalse } from '../../src/types/true-false.ts';
+import { typeAnswer } from '../../src/types/type-answer.ts';
 import type { TypeKit } from './registry-properties.ts';
 
 // How to draw and answer each MVP question type, for the properties every registry must hold.
@@ -115,4 +116,100 @@ const orderingKit: TypeKit = {
   },
 };
 
-export const mvpKits: TypeKit[] = [singleChoiceKit, trueFalseKit, imageChoiceKit, orderingKit];
+/**
+ * A word of a typed answer: letters with and without accents, in both cases, and digits. It has
+ * no "a", "t" or "q", so no entry built from these words begins with an English article, and a
+ * run of "q" shares no character with any of them.
+ */
+export const answerWord = fc.string({
+  unit: fc.constantFrom(...Array.from('bcdeghilmnoprsuvzBDEGLMNOPRSéöüñçł0123456789')),
+  minLength: 1,
+  maxLength: 8,
+});
+
+const answerEntry = fc
+  .tuple(
+    fc.array(answerWord, { minLength: 1, maxLength: 3 }),
+    fc.constantFrom(' ', '-', ', '),
+    fc.constantFrom('', '.', '!'),
+  )
+  .map(([words, joint, ending]) => `${words.join(joint)}${ending}`);
+
+/** What the question schema compares to tell accepted from rejected: close enough for these words. */
+const compared = (entry: string): string =>
+  entry
+    .normalize('NFKD')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+const textAnswerQuestion = fc
+  .record({
+    accepted: fc.uniqueArray(answerEntry, { minLength: 1, maxLength: 3, selector: compared }),
+    rejected: fc.option(fc.array(answerEntry, { maxLength: 2 }), { nil: undefined }),
+    maxTypos: fc.option(fc.integer({ min: 0, max: 2 }), { nil: undefined }),
+  })
+  .map(({ accepted, rejected, maxTypos }) => {
+    const taken = accepted.map(compared);
+    const key = {
+      accepted,
+      ...(rejected === undefined
+        ? {}
+        : { rejected: rejected.filter((entry) => !taken.includes(compared(entry))) }),
+      ...(maxTypos === undefined ? {} : { maxTypos }),
+    };
+    return { type: typeAnswer.type, payload: { format: 'text' }, key };
+  });
+
+const numberAnswerQuestion = fc
+  .record({
+    // Thousandths, so the answer always prints without an exponent.
+    value: fc
+      .integer({ min: -999_999_999, max: 999_999_999 })
+      .map((thousandths) => thousandths / 1000),
+    tolerance: fc.constantFrom(0, 0.001, 0.5, 1, 10),
+    units: fc.constantFrom(undefined, ['%', 'percent'], ['km', 'kilometres']),
+  })
+  .map(({ value, tolerance, units }) => ({
+    type: typeAnswer.type,
+    payload: { format: 'number' },
+    key: {
+      accepted: [String(value)],
+      numeric: { value, tolerance, ...(units === undefined ? {} : { units }) },
+    },
+  }));
+
+const typeAnswerKit: TypeKit = {
+  type: typeAnswer.type,
+  question: fc.oneof(textAnswerQuestion, numberAnswerQuestion),
+  // The first accepted entry is the answer shown on reveal.
+  correctResponse: (question: Drawn) => ({
+    text: typeAnswer.keySchema.parse(question.key).accepted[0],
+  }),
+  wrongResponse: (question: Drawn) => {
+    const { numeric } = typeAnswer.keySchema.parse(question.key);
+    // Three or more of a letter no answer contains: further from every entry than any typo.
+    const unrelated = fc
+      .tuple(
+        fc.integer({ min: 3, max: 12 }),
+        fc.constantFrom('q', 'Q'),
+        fc.constantFrom('', ' ', '?'),
+      )
+      .map(([length, letter, ending]) => ({ text: `${letter.repeat(length)}${ending}` }));
+    if (numeric === undefined) return unrelated;
+
+    // A whole number well outside the tolerance, with no separator to read two ways.
+    const far = fc
+      .integer({ min: 1, max: 9 })
+      .map((steps) => Math.trunc(numeric.value) + Math.ceil(numeric.tolerance) + 10 * steps)
+      .map((value) => ({ text: String(value) }));
+    return fc.oneof(unrelated, far);
+  },
+};
+
+export const mvpKits: TypeKit[] = [
+  singleChoiceKit,
+  trueFalseKit,
+  imageChoiceKit,
+  typeAnswerKit,
+  orderingKit,
+];

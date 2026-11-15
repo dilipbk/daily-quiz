@@ -6,7 +6,7 @@ import type { Grade, QuestionIssue } from '../core/module.ts';
 // What the types that offer a list to pick from, or to arrange, have in common: the ids of the
 // entries, the rules a sound list keeps, and how a pick is graded.
 
-/** The longest id, in UTF-16 units. A hard cap, not a tunable: it bounds what a response carries. */
+/** The longest id, in characters. A hard cap, not a tunable: it bounds what a response carries. */
 export const maxIdLength = 32;
 
 /** The id of an option or an item, unique within its question. */
