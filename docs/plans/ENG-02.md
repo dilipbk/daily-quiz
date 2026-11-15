@@ -535,16 +535,16 @@ Order: core against toy types first, so the core is finished before any real typ
 - Consumes: nothing.
 - Produces: everything under `core/module.ts` and `core/registry.ts` in Public API. `tests/support/toy-types.ts` exports `toyFlag` (type `toy_flag`; payload `{}`; key and response `{ value: boolean }`; no tunables) and `toyWord` (type `toy_word`; payload `{ hint: string }`; key and response `{ word: string }`; tunables `{ ignoreCase: boolean }`; `check` returns an issue at `['key', 'word']` when the word equals the hint), plus `toyRegistry = createRegistry([toyFlag, toyWord])`. Task 2 adds `toyKits` to the same file.
 
-- [ ] **Step 1: Install.** Re-read zod.dev and fast-check.dev for breaking notes, then run:
+- [x] **Step 1: Install.** Re-read zod.dev and fast-check.dev for breaking notes, then run:
 
 ```bash
 pnpm --filter @repo/quiz-engine add zod@^4.6.7 '@repo/content-blocks@workspace:*'
 pnpm --filter @repo/quiz-engine add -D fast-check@^4.10.2
 ```
 
-- [ ] **Step 2: Configure the package.** `tsconfig.json` becomes `{ "extends": "@repo/config/tsconfig/base.json", "compilerOptions": { "allowImportingTsExtensions": true }, "include": ["src", "tests"], "exclude": ["tests/node"] }`. `tests/node/tsconfig.json` is the same with `"types": ["node"]` added and `"include": ["."]`, no `exclude`. The `typecheck` script becomes `tsc --noEmit && tsc --noEmit -p tests/node`. `src/` stays without Node types.
+- [x] **Step 2: Configure the package.** `tsconfig.json` becomes `{ "extends": "@repo/config/tsconfig/base.json", "compilerOptions": { "allowImportingTsExtensions": true }, "include": ["src", "tests"], "exclude": ["tests/node"] }`. `tests/node/tsconfig.json` is the same with `"types": ["node"]` added and `"include": ["."]`, no `exclude`. The `typecheck` script becomes `tsc --noEmit && tsc --noEmit -p tests/node`. `src/` stays without Node types.
 
-- [ ] **Step 3: Add the lint rules.** `eslint.config.js` becomes:
+- [x] **Step 3: Add the lint rules.** `eslint.config.js` becomes:
 
 ```js
 import base from '@repo/config/eslint';
@@ -619,7 +619,7 @@ export default defineConfig(
 );
 ```
 
-- [ ] **Step 4: Write the failing tests** in `tests/core/registry.test.ts`:
+- [x] **Step 4: Write the failing tests** in `tests/core/registry.test.ts`:
 
 | Test name                                                                           | Asserts                                                                                                                                                                                                                                                                                             |
 | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -632,13 +632,13 @@ export default defineConfig(
 | `refuses an empty list and a repeated type id at construction`                      | `createRegistry([])` and `createRegistry([toyFlag, toyFlag])` throw                                                                                                                                                                                                                                 |
 | `grade constructors keep the credit invariants`                                     | `correct()` is `{ status: 'correct', credit: 1 }`; `incorrect()` has credit 0; `incorrect(0.5)` has credit 0.5; `incorrect(1)` and `incorrect(-0.1)` throw; `invalid('malformed')` carries the reason; `gradeSchema` refuses `{ status: 'correct', credit: 0.5 }` and a `reason` on a correct grade |
 
-- [ ] **Step 5: Run and see them fail.** `pnpm exec vitest run packages/quiz-engine` · Expected: FAIL, cannot resolve `../../src/core/registry.ts`.
+- [x] **Step 5: Run and see them fail.** `pnpm exec vitest run packages/quiz-engine` · Expected: FAIL, cannot resolve `../../src/core/registry.ts`.
 
-- [ ] **Step 6: Implement `module.ts` and `registry.ts`** to the signatures in Public API. `questionSchema` is a `z.discriminatedUnion('type', …)` of one `z.strictObject({ type: z.literal(m.type), payload: m.payloadSchema, key: m.keySchema })` per module, each with a `superRefine` that turns the module's `QuestionIssue`s into zod issues. If zod refuses a refined object as a union member, apply one `superRefine` to the union that looks the module up by `type`.
+- [x] **Step 6: Implement `module.ts` and `registry.ts`** to the signatures in Public API. `questionSchema` is a `z.discriminatedUnion('type', …)` of one `z.strictObject({ type: z.literal(m.type), payload: m.payloadSchema, key: m.keySchema })` per module, each with a `superRefine` that turns the module's `QuestionIssue`s into zod issues. If zod refuses a refined object as a union member, apply one `superRefine` to the union that looks the module up by `type`.
 
-- [ ] **Step 7: Run and see them pass**, then `pnpm verify` · Expected: green.
+- [x] **Step 7: Run and see them pass**, then `pnpm verify` · Expected: green.
 
-- [ ] **Step 8: Commit.** `feat(quiz-engine): add the question-type module contract and registry (ENG-02)`
+- [x] **Step 8: Commit.** `feat(quiz-engine): add the question-type module contract and registry (ENG-02)`
 
 ### Task 2: Generic grading, key stripping, the fixture runner
 

@@ -8,12 +8,14 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tests/node"
   },
   "dependencies": {
+    "@repo/content-blocks": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@repo/config": "workspace:*"
+    "@repo/config": "workspace:*",
+    "fast-check": "^4.10.2"
   }
 }
