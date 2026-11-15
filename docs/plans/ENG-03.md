@@ -281,3 +281,15 @@ Edge cases walked before the report: empty input, bad input, duplicates and retr
 - FND-06: fold R1 to R5 into spec v1.1 (STK-01, STK-03, STK-04, XP-02, XP-04, PLAY-02).
 - A zone-flip plausibility signal on the server, with BE-06's plausibility v0 or after it.
 - ENG-04: reuse `SessionSource` and `PlayMode` from this package in `contracts`, or agree the names.
+
+## As built (2026-11-15)
+
+The plan was approved by the owner and built as written, with these differences:
+
+- Source and test files import each other with `.ts` extensions, and the package's two tsconfigs set `allowImportingTsExtensions`. Node's type stripping needs the extension; Vite and Metro accept it.
+- `src/validate.ts` holds the one shared input check (`assertCount`). It is internal and not exported.
+- Two test files were added: `tests/rules.test.ts` pins `DEFAULT_GAME_RULES` to the rulings, and `tests/index.test.ts` pins the exported names.
+- `offsetChanges2026` in `tests/support/zones.ts` is a function that scans on first use, so test files that only need the zone list don't pay for the scan.
+- `levelsGained` returns 0 when the XP total falls, as when the server's total replaces a higher optimistic one.
+- A daily-goal target of 0 from remote config counts as met.
+- The fast-check commit is scoped `chore(repo)`, and the tests tsconfig went in with the first feature commit so every commit typechecks.
