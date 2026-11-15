@@ -1,5 +1,6 @@
 import type { GradingFixture } from '../core/conformance.ts';
 import { imageChoiceFixtures } from './image-choice.ts';
+import { orderingFixtures } from './ordering.ts';
 import { singleChoiceFixtures } from './single-choice.ts';
 import { trueFalseFixtures } from './true-false.ts';
 
@@ -11,4 +12,5 @@ export const gradingFixtures: readonly GradingFixture[] = [
   ...singleChoiceFixtures,
   ...trueFalseFixtures,
   ...imageChoiceFixtures,
+  ...orderingFixtures,
 ];

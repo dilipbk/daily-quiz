@@ -1,6 +1,7 @@
 import fc from 'fast-check';
 import { image, text } from '../../src/fixtures/content.ts';
 import { imageChoice } from '../../src/types/image-choice.ts';
+import { ordering } from '../../src/types/ordering.ts';
 import { singleChoice } from '../../src/types/single-choice.ts';
 import { trueFalse } from '../../src/types/true-false.ts';
 import type { TypeKit } from './registry-properties.ts';
@@ -87,4 +88,31 @@ const trueFalseKit: TypeKit = {
     fc.constant({ value: !trueFalse.keySchema.parse(question.key).value }),
 };
 
-export const mvpKits: TypeKit[] = [singleChoiceKit, trueFalseKit, imageChoiceKit];
+const sameOrder = (a: readonly string[], b: readonly string[]): boolean =>
+  a.length === b.length && a.every((value, index) => value === b[index]);
+
+/** Every arrangement of `values` but `order` itself. */
+const arrangementOtherThan = (values: readonly string[], order: readonly string[]) =>
+  fc
+    .shuffledSubarray([...values], { minLength: values.length })
+    .filter((candidate) => !sameOrder(candidate, order));
+
+const orderingKit: TypeKit = {
+  type: ordering.type,
+  question: distinctEntries(label, 3, 6).chain((entries) => {
+    const stored = entries.map((entry) => entry.id);
+    // The key may be any order but the stored one, which would give the answer away.
+    return arrangementOtherThan(stored, stored).map((order) => ({
+      type: ordering.type,
+      payload: { items: entries.map((entry) => ({ id: entry.id, content: text(entry.shown) })) },
+      key: { order },
+    }));
+  }),
+  correctResponse: (question: Drawn) => ({ order: ordering.keySchema.parse(question.key).order }),
+  wrongResponse: (question: Drawn) => {
+    const { order } = ordering.keySchema.parse(question.key);
+    return arrangementOtherThan(order, order).map((other) => ({ order: other }));
+  },
+};
+
+export const mvpKits: TypeKit[] = [singleChoiceKit, trueFalseKit, imageChoiceKit, orderingKit];

@@ -874,7 +874,7 @@ Further cases, one `it` each:
 
 **Interfaces:** Consumes Tasks 1, 2, 5. Produces the `ordering` module and its `TypeKit`.
 
-- [ ] **Step 1: Write the fixtures first.** Question _ORD_: "Order these planets from nearest to the Sun"; `payload.items` stored as `mars`, `mercury`, `earth`, `venus`; key order `mercury`, `venus`, `earth`, `mars`.
+- [x] **Step 1: Write the fixtures first.** Question _ORD_: "Order these planets from nearest to the Sun"; `payload.items` stored as `mars`, `mercury`, `earth`, `venus`; key order `mercury`, `venus`, `earth`, `mars`.
 
 | Fixture id               | Response order                       | Expected             |
 | ------------------------ | ------------------------------------ | -------------------- |
@@ -887,9 +887,9 @@ Further cases, one `it` each:
 | `ordering/unknown-item`  | mercury, venus, earth, pluto         | invalid, `malformed` |
 | `ordering/unanswered`    | `null`                               | unanswered           |
 
-- [ ] **Step 2: Write the failing tests** in `tests/types/ordering.test.ts`: `refuses fewer than 3 or more than 6 items` · `refuses a key that isn't a permutation of the item ids` (`['key', 'order']`) · `refuses items already stored in key order` (`['payload', 'items']`: the payload would give the answer away) · `refuses two items with the same content`. Properties: `ordering: any permutation other than the key's is incorrect with credit 0` · `ordering: the stored order of items never changes a grade`.
-- [ ] **Step 3: Run, fail. Step 4: Implement. Step 5: Run, pass; `pnpm verify`.**
-- [ ] **Step 6: Commit.** `feat(quiz-engine): grade ordering questions (ENG-02)`
+- [x] **Step 2: Write the failing tests** in `tests/types/ordering.test.ts`: `refuses fewer than 3 or more than 6 items` · `refuses a key that isn't a permutation of the item ids` (`['key', 'order']`) · `refuses items already stored in key order` (`['payload', 'items']`: the payload would give the answer away) · `refuses two items with the same content`. Properties: `ordering: any permutation other than the key's is incorrect with credit 0` · `ordering: the stored order of items never changes a grade`.
+- [x] **Step 3: Run, fail. Step 4: Implement. Step 5: Run, pass; `pnpm verify`.**
+- [x] **Step 6: Commit.** `feat(quiz-engine): grade ordering questions (ENG-02)`
 
 ### Task 7: Text toolkit
 
