@@ -170,7 +170,8 @@ const codeSchema = z.strictObject({
   source: linesOfText(blockLimits.sourceLength, 'Add the source code.'),
 });
 
-const imageSchema = z.strictObject({
+/** An image block on its own, for content that must be exactly one image: an `image_choice` option. */
+export const imageBlockSchema = z.strictObject({
   type: z.literal('image'),
   assetId: assetIdSchema,
   alt: lineOfText(blockLimits.altLength, 'Describe the image for someone who cannot see it.'),
@@ -204,7 +205,7 @@ export const blockSchema = z.discriminatedUnion('type', [
   paragraphSchema,
   mathSchema,
   codeSchema,
-  imageSchema,
+  imageBlockSchema,
   audioSchema,
   quoteSchema,
   listSchema,
@@ -266,7 +267,7 @@ export type Inline = z.infer<typeof inlineSchema>;
 export type ParagraphBlock = z.infer<typeof paragraphSchema>;
 export type MathBlock = z.infer<typeof mathSchema>;
 export type CodeBlock = z.infer<typeof codeSchema>;
-export type ImageBlock = z.infer<typeof imageSchema>;
+export type ImageBlock = z.infer<typeof imageBlockSchema>;
 export type AudioBlock = z.infer<typeof audioSchema>;
 export type QuoteBlock = z.infer<typeof quoteSchema>;
 export type ListBlock = z.infer<typeof listSchema>;

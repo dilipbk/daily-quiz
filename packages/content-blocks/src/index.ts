@@ -2,7 +2,7 @@
 export { isHttpsUrl } from './https-url.ts';
 export type { BlockIssueCode } from './issue.ts';
 export { blockLimits } from './limits.ts';
-export { blockSchema, blocksSchema, blockTypes } from './schema.ts';
+export { blockSchema, blocksSchema, blockTypes, imageBlockSchema } from './schema.ts';
 export type {
   AudioBlock,
   Block,

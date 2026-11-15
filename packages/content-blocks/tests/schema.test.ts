@@ -1,6 +1,12 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import * as z from 'zod';
-import { blockLimits, blocksSchema, blockTypes, validateBlocks } from '../src/index.ts';
+import {
+  blockLimits,
+  blocksSchema,
+  blockTypes,
+  imageBlockSchema,
+  validateBlocks,
+} from '../src/index.ts';
 import type { Block, BlockType, ImageBlock, Link, ListBlock, TextSpan } from '../src/index.ts';
 import { link, paragraph, text } from './support.ts';
 
@@ -26,6 +32,15 @@ describe('the block schema, as other packages use it', () => {
 
   it("QT-04: composes into a question's prompt, options and explanation", () => {
     expect(questionSchema.parse(question)).toEqual(question);
+  });
+
+  // The shape ENG-02 gives an `image_choice` option: exactly one image, with its alt text.
+  it('QT-04: offers the image block alone, for an option that must be one image', () => {
+    const image = { type: 'image', assetId: 'asset_1', alt: 'A red kite in flight.' };
+
+    expect(imageBlockSchema.parse(image)).toEqual(image);
+    expect(imageBlockSchema.safeParse({ type: 'image', assetId: 'asset_1' }).success).toBe(false);
+    expect(imageBlockSchema.safeParse(paragraph(text('A red kite.'))).success).toBe(false);
   });
 
   it('QT-04: points at the option and the field when one option is at fault', () => {
