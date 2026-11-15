@@ -841,8 +841,8 @@ Further cases, one `it` each:
 - Consumes: Tasks 1 and 2; the ENG-01 names under "Assumptions about ENG-01".
 - Produces: `singleChoice`, `imageChoice`, `trueFalse` modules; `mvpQuestionTypes`, `mvpRegistry` and `specMvpTunables` (three types and an empty tunables object so far; Tasks 6 and 8 extend them); `gradingFixtures`; in `types/choice.ts`, `optionIdSchema`, `checkOptions(options, correctOptionId): QuestionIssue[]` and `gradeChoice(optionIds, correctOptionId, response): Grade`; in `fixtures/content.ts`, `text(value: string): ContentBlocks` and `image(assetId: string, alt: string): ImageBlock`; in `tests/support/arbitraries.ts`, `mvpKits: TypeKit[]`. A kit generates only questions the registry's schema accepts.
 
-- [ ] **Step 1: Confirm A1–A5** against merged ENG-01, and write `src/types/content.ts` and `src/fixtures/content.ts`.
-- [ ] **Step 2: Write the fixtures first.** Questions: _SC_ "Which planet has the shortest day?" with options `a` Earth, `b` Jupiter, `c` Mars, `d` Venus, key `b`. _IC_ the same four as images, key `b`. _TF_ "Jupiter has the shortest day of any planet in the Solar System", key `true`. All cite QT-02.
+- [x] **Step 1: Confirm A1–A5** against merged ENG-01, and write `src/types/content.ts` and `src/fixtures/content.ts`.
+- [x] **Step 2: Write the fixtures first.** Questions: _SC_ "Which planet has the shortest day?" with options `a` Earth, `b` Jupiter, `c` Mars, `d` Venus, key `b`. _IC_ the same four as images, key `b`. _TF_ "Jupiter has the shortest day of any planet in the Solar System", key `true`. All cite QT-02.
 
 | Fixture id                                                         | Answer                                                                  | Expected                 |
 | ------------------------------------------------------------------ | ----------------------------------------------------------------------- | ------------------------ |
@@ -859,14 +859,14 @@ Further cases, one `it` each:
 | `true_false/unanswered`                                            | `null`                                                                  | unanswered               |
 | `true_false/string-true`                                           | value `'true'`                                                          | invalid, `malformed`     |
 
-- [ ] **Step 3: Write the failing tests.**
+- [x] **Step 3: Write the failing tests.**
   - `tests/fixtures.test.ts › every fixture question parses with the registry's question schema` · `› fixture ids are unique and start with their question's type` · `› QT-02: every shared fixture passes` (for now via `runGradingFixtures(mvpRegistry, gradingFixtures, specMvpTunables)`).
   - `tests/types/choice.test.ts`, each asserting `mvpRegistry.questionSchema.safeParse(...)` fails with the stated path: `refuses fewer than 2 or more than 4 options` (`['payload', 'options']`) · `refuses duplicate option ids` · `refuses a key that names no option` (`['key', 'correctOptionId']`) · `refuses two options with the same content` (duplicate options, CT-02's "duplicate answer") · `refuses an option with no content` · `refuses an image option without alt text` (if A3 holds) · `true_false refuses any payload property`.
   - `tests/grading.properties.test.ts`: `describeRegistryProperties('MVP registry', mvpRegistry, mvpKits, specMvpTunables, …)`, plus `the order of options in the payload never changes a grade` (shuffle `payload.options`, same grade), plus the same generic properties with questions drawn from `gradingFixtures` by `fc.constantFrom`.
-- [ ] **Step 4: Run and see them fail.**
-- [ ] **Step 5: Implement** the three modules, `choice.ts` and the catalogue. Equal content is `deepEqual` on the parsed blocks.
-- [ ] **Step 6: Run and see them pass**, then `pnpm verify` (the workspace test now checks that `./fixtures` resolves).
-- [ ] **Step 7: Commit.** `feat(quiz-engine): add single_choice, image_choice and true_false with shared fixtures (ENG-02)`
+- [x] **Step 4: Run and see them fail.**
+- [x] **Step 5: Implement** the three modules, `choice.ts` and the catalogue. Equal content is `deepEqual` on the parsed blocks.
+- [x] **Step 6: Run and see them pass**, then `pnpm verify` (the workspace test now checks that `./fixtures` resolves).
+- [x] **Step 7: Commit.** `feat(quiz-engine): add single_choice, image_choice and true_false with shared fixtures (ENG-02)`
 
 ### Task 6: `ordering`
 

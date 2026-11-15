@@ -5,7 +5,8 @@
   "description": "Question-type schemas, graders, answer normalization and scoring.",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./fixtures": "./src/fixtures/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit && tsc --noEmit -p tests/node"
