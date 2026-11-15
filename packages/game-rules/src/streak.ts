@@ -1,4 +1,4 @@
-import { addDays, daysBetween, type LocalDate } from './local-date.ts';
+import { addDays, daysBetween, localDateOf, type LocalDate } from './local-date.ts';
 import {
   DEFAULT_GAME_RULES,
   isDailySet,
@@ -116,6 +116,33 @@ export function deriveStreak(
     frozenDates,
     milestoneHits,
   };
+}
+
+/** When and where a qualifying session was completed. */
+export interface Completion {
+  /** The completion instant, in milliseconds since the epoch (OFF-04). */
+  completedAt: number;
+  /** The IANA time zone of the device at that instant. */
+  timeZone: string;
+}
+
+/**
+ * The streak that follows from a set of qualifying completions, seen at `now`.
+ *
+ * Each completion is credited to the calendar date in its own zone at its own instant
+ * (STK-03, ADR 0003). No completion's day depends on another's, so travel between zones
+ * needs no special case and a late or repeated arrival changes nothing.
+ */
+export function streakFromCompletions(
+  completions: Iterable<Completion>,
+  now: { instant: number; timeZone: string },
+  rules: GameRules = DEFAULT_GAME_RULES,
+): StreakState {
+  const creditedDates = new Set<LocalDate>();
+  for (const { completedAt, timeZone } of completions) {
+    creditedDates.add(localDateOf(completedAt, timeZone));
+  }
+  return deriveStreak(creditedDates, localDateOf(now.instant, now.timeZone), rules);
 }
 
 /** The next milestone after a streak of this length, or `null` past the last one (STK-06). */
