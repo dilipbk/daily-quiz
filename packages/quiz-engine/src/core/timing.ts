@@ -15,12 +15,13 @@ export interface TimingConfig {
   readonly mediaBonusMs: number;
 }
 
-const milliseconds = z.int().positive();
+const limitMs = z.int().positive();
 
 export const timingConfigSchema: z.ZodType<TimingConfig> = z.strictObject({
-  choiceMs: milliseconds,
-  constructedMs: milliseconds,
-  mediaBonusMs: milliseconds,
+  choiceMs: limitMs,
+  constructedMs: limitMs,
+  // Zero is a config with no media bonus. A limit of zero is no question at all.
+  mediaBonusMs: z.int().nonnegative(),
 });
 
 /** The §10.3 values: 20 s, 30 s and +10 s. */

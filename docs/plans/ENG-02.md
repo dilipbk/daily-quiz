@@ -823,7 +823,7 @@ Further cases, one `it` each:
 
 **Interfaces:** Consumes `TimeClass` (Task 1). Produces everything under `core/timing.ts` in Public API.
 
-- [x] **Step 1: Write the failing test** `§10.3 the Standard limit is 20 s for choice types, 30 s for constructed answers, +10 s with media or math`: with `specTimingConfig`, `standardLimitMs('choice', false, …)` is 20 000; `('constructed', false)` is 30 000; `('choice', true)` is 30 000; `('constructed', true)` is 40 000. A second test, `every value comes from the config`, uses `{ choiceMs: 1, constructedMs: 2, mediaBonusMs: 4 }` and expects 1, 2, 5, 6. A third: `timingConfigSchema` refuses zero, negative and fractional values.
+- [x] **Step 1: Write the failing test** `§10.3 the Standard limit is 20 s for choice types, 30 s for constructed answers, +10 s with media or math`: with `specTimingConfig`, `standardLimitMs('choice', false, …)` is 20 000; `('constructed', false)` is 30 000; `('choice', true)` is 30 000; `('constructed', true)` is 40 000. A second test, `every value comes from the config`, uses `{ choiceMs: 1, constructedMs: 2, mediaBonusMs: 4 }` and expects 1, 2, 5, 6. A third: `timingConfigSchema` refuses zero, negative and fractional values (amended by the PM on 2026-11-15: `mediaBonusMs` may be 0, a config with no media bonus; the two limits may not).
 - [x] **Step 2: Run, fail. Step 3: Implement. Step 4: Run, pass; `pnpm verify`.**
 - [x] **Step 5: Commit.** `feat(quiz-engine): derive the Standard time limit from a type's time class (ENG-02)`
 

@@ -28,17 +28,30 @@ describe('standardLimitMs', () => {
     expect(Object.isFrozen(specTimingConfig)).toBe(true);
   });
 
-  it('timingConfigSchema refuses zero, negative and fractional values', () => {
+  it('timingConfigSchema refuses negative and fractional values, and a limit of zero', () => {
     for (const field of ['choiceMs', 'constructedMs', 'mediaBonusMs']) {
-      for (const value of [0, -1, 1_000.5, Number.NaN, Number.POSITIVE_INFINITY, '20000']) {
+      for (const value of [-1, 1_000.5, Number.NaN, Number.POSITIVE_INFINITY, '20000']) {
         const config = { ...specTimingConfig, [field]: value };
 
         expect(timingConfigSchema.safeParse(config).success, JSON.stringify(config)).toBe(false);
       }
     }
+    for (const field of ['choiceMs', 'constructedMs']) {
+      const config = { ...specTimingConfig, [field]: 0 };
+
+      expect(timingConfigSchema.safeParse(config).success, JSON.stringify(config)).toBe(false);
+    }
     expect(timingConfigSchema.safeParse({ ...specTimingConfig, extendedMs: 40_000 }).success).toBe(
       false,
     );
     expect(timingConfigSchema.safeParse({ choiceMs: 20_000 }).success).toBe(false);
+  });
+
+  it('timingConfigSchema accepts a media bonus of 0: a config with no media bonus', () => {
+    const config = { ...specTimingConfig, mediaBonusMs: 0 };
+
+    expect(timingConfigSchema.parse(config)).toEqual(config);
+    expect(standardLimitMs('choice', true, config)).toBe(20_000);
+    expect(standardLimitMs('constructed', true, config)).toBe(30_000);
   });
 });
