@@ -84,7 +84,7 @@ export interface QuestionTypeModule<
   readonly timeClass: TimeClass;
   /** What a player is shown. Safe to send before they answer. */
   readonly payloadSchema: z.ZodType<TPayload>;
-  /** The answer. Never sent to a player who hasn't answered a Tier A question (spec §10.1). */
+  /** The answer. In a Tier A session it stays on the server until the player has answered (§10.1). */
   readonly keySchema: z.ZodType<TKey>;
   /** What a player submits. */
   readonly responseSchema: z.ZodType<TResponse>;
