@@ -12,7 +12,7 @@ import { assertCount } from './validate.ts';
  * The XP a completed session earns (XP-01): an amount for completing it, an amount per
  * correct answer, and a bonus when every answer is correct. Relaxed mode earns the same
  * as Standard. A Practice replay earns a share of that, rounded down, and a replayed
- * daily set earns nothing (PLAY-02, DLY-03, ruling R5).
+ * daily set earns nothing (PLAY-02, DLY-03, ADR 0004).
  */
 export function sessionXp(
   session: {

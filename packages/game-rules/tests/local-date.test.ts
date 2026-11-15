@@ -8,7 +8,7 @@ import {
   localDateOf,
   parseLocalDate,
 } from '../src/local-date.ts';
-import { allZones, offsetChanges2026, offsetMinutes } from './support/zones.ts';
+import { allZones, dateByOffset, offsetChanges2026 } from './support/zones.ts';
 
 const HOUR_MS = 3_600_000;
 const at = (iso: string): number => Date.parse(iso);
@@ -50,6 +50,18 @@ describe('localDateOf (STK-03)', () => {
     expect(localDateOf(instant, 'Etc/GMT+12')).toBe('2026-06-14');
     expect(localDateOf(instant, 'Australia/Lord_Howe')).toBe('2026-06-15');
     expect(localDateOf(instant, 'Pacific/Kiritimati')).toBe('2026-06-16');
+  });
+
+  it('refuses a missing zone instead of reading the date from the host zone', () => {
+    const missing = undefined as unknown as string;
+    expect(() => localDateOf(at('2026-06-15T10:30:00Z'), missing)).toThrow(RangeError);
+    expect(isValidTimeZone(missing)).toBe(false);
+  });
+
+  it.each([null, 42, {}, []])('refuses %j as a zone', (value) => {
+    const notAZone = value as unknown as string;
+    expect(() => localDateOf(at('2026-06-15T10:30:00Z'), notAZone)).toThrow(RangeError);
+    expect(isValidTimeZone(notAZone)).toBe(false);
   });
 
   it('refuses a zone the runtime does not know', () => {
@@ -97,13 +109,10 @@ describe("localDateOf, against the zone's own UTC offset", () => {
   // A second route to the same answer: shift the instant by the zone's offset and read the
   // UTC date. The streak properties build their days with `localDateOf`, so this is what
   // checks `localDateOf` itself across DST in every zone.
-  const dateFromOffset = (t: number, zone: string): string =>
-    utcDate(t + offsetMinutes(t, zone) * 60_000);
-
   it('agrees at any instant, in any zone', () => {
     fc.assert(
       fc.property(zone, instant, (zone, t) => {
-        expect(localDateOf(t, zone)).toBe(dateFromOffset(t, zone));
+        expect(localDateOf(t, zone)).toBe(dateByOffset(t, zone));
       }),
       { numRuns: 500 },
     );
@@ -115,7 +124,7 @@ describe("localDateOf, against the zone's own UTC offset", () => {
       // The local day of the change lies between 14 hours before and 36 hours after this.
       for (let t = utcMidnight - 16 * HOUR_MS; t <= utcMidnight + 40 * HOUR_MS; t += HOUR_MS / 2) {
         expect(localDateOf(t, zone), `${zone} at ${new Date(t).toISOString()}`).toBe(
-          dateFromOffset(t, zone),
+          dateByOffset(t, zone),
         );
       }
     }

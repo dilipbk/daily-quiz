@@ -134,7 +134,7 @@ describe('deriveStreak', () => {
     expect(state.milestoneHits.map((hit) => hit.milestone)).toEqual([3, 7, 14]);
   });
 
-  it('grants the milestones of a new streak again after a break (ruling R3)', () => {
+  it('grants the milestones of a new streak again after a break (ADR 0004)', () => {
     expect(deriveStreak([...days(1, 3), ...days(6, 8)], day(8))).toMatchObject({
       current: 3,
       best: 3,
@@ -212,6 +212,28 @@ describe('deriveStreak', () => {
   it('caps a larger grant at the most a player may hold', () => {
     const rules = withStreakRules({ freezesPerMilestone: 5 });
     expect(deriveStreak(days(1, 3), day(3), rules).freezesHeld).toBe(2);
+  });
+});
+
+describe('deriveStreak, what a late sync can change (ADR 0004)', () => {
+  // The streak is replayed over every credited date, so one more date changes more than
+  // its own day. These pin the two results that surprise.
+
+  it('can end a streak that looked alive, by changing which freezes were held', () => {
+    const history = [...days(1, 7), ...days(9, 30), day(32), day(35)];
+    // Day 8 was missed, so each later miss (31, 33, 34) found a freeze to spend.
+    expect(deriveStreak(history, day(35))).toMatchObject({ current: 31, best: 31 });
+
+    // Day 8 syncs late. The streak now passes 14 and 30 while already holding two freezes,
+    // both grants are lost, and of days 31, 33 and 34 only two can be covered.
+    expect(deriveStreak([...history, day(8)], day(35))).toMatchObject({ current: 1, best: 31 });
+  });
+
+  it('can report a lower best once a day credited ahead of today follows a missed day', () => {
+    // Day 3 was credited further east. Seen on day 2, day 2 is not missed yet.
+    expect(deriveStreak([day(1), day(3)], day(2)).best).toBe(2);
+    // Day 2 ends unplayed, and the same two dates were never a streak of 2.
+    expect(deriveStreak([day(1), day(3)], day(3)).best).toBe(1);
   });
 });
 

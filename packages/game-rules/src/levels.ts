@@ -1,7 +1,7 @@
 import { DEFAULT_GAME_RULES, type GameRules } from './rules.ts';
 import { assertCount } from './validate.ts';
 
-// The curve (XP-02, ruling R4): going from level L to L+1 costs `stepXp × L`, so each level
+// The curve (XP-02, ADR 0004): going from level L to L+1 costs `stepXp × L`, so each level
 // costs more than the last and reaching level L takes `stepXp × L × (L − 1) / 2` in total.
 // Everyone starts at level 1 and there is no top level.
 
@@ -24,8 +24,8 @@ export function xpToReachLevel(level: number, rules: GameRules = DEFAULT_GAME_RU
 /** The level of a player with `totalXp`. */
 export function levelForXp(totalXp: number, rules: GameRules = DEFAULT_GAME_RULES): number {
   assertCount(totalXp, 'totalXp');
-  // The closed form lands on the right level or its neighbour; the loops settle it exactly,
-  // so floating point can never put a player a level out.
+  // The closed form can land a level out when the step is not a whole number. The loops
+  // settle it against `xpToReachLevel`, which the XP bar also reads, so the two always agree.
   const estimate = Math.floor((1 + Math.sqrt(1 + (8 * totalXp) / stepOf(rules))) / 2);
   let level = Math.max(1, estimate);
   while (xpToReachLevel(level + 1, rules) <= totalXp) level += 1;

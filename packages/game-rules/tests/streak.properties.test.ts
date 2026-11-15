@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { addDays, daysBetween, localDateOf, type LocalDate } from '../src/local-date.ts';
 import { deriveStreak, streakFromCompletions, type Completion } from '../src/streak.ts';
-import { allZones, dayBounds, offsetChanges2026 } from './support/zones.ts';
+import { allZones, dateByOffset, dayBounds, offsetChanges2026 } from './support/zones.ts';
 
 // ENG-03's done-when line: property tests cover DST changes and time-zone hops, and the
 // order in which completions arrive can't change a streak.
@@ -138,7 +138,7 @@ describe('DST and other changes of clocks (STK-03)', () => {
           sessions.push({ completedAt: instant, timeZone: zone });
         }
         const state = streakFromCompletions(sessions, { instant, timeZone: zone });
-        const daysPlayed = daysBetween(localDateOf(start, zone), localDateOf(instant, zone)) + 1;
+        const daysPlayed = daysBetween(dateByOffset(start, zone), dateByOffset(instant, zone)) + 1;
         expect(state.current).toBe(daysPlayed);
         expect(state.frozenDates).toEqual([]);
       }),
@@ -147,7 +147,22 @@ describe('DST and other changes of clocks (STK-03)', () => {
   });
 });
 
-describe('time-zone hops (STK-03, ruling R1)', () => {
+describe('a calendar day a zone skipped (ADR 0003)', () => {
+  it('counts as a missed day: Apia had no 30 December 2011', () => {
+    // Samoa crossed the date line. These four sessions are exactly 24 hours apart.
+    const sessions: Completion[] = ['12-28', '12-29', '12-30', '12-31'].map((utcDay) => ({
+      completedAt: at(`2011-${utcDay}T22:00:00Z`),
+      timeZone: 'Pacific/Apia',
+    }));
+    const dates = sessions.map(({ completedAt, timeZone }) => localDateOf(completedAt, timeZone));
+    expect(dates).toEqual(['2011-12-28', '2011-12-29', '2011-12-31', '2012-01-01']);
+
+    const newYearsDay = { instant: at('2011-12-31T22:00:00Z'), timeZone: 'Pacific/Apia' };
+    expect(streakFromCompletions(sessions, newYearsDay)).toMatchObject({ current: 2, best: 2 });
+  });
+});
+
+describe('time-zone hops (STK-03, ADR 0003)', () => {
   it('credits each session to its own local date, whatever zones the others used', () => {
     fc.assert(
       fc.property(completions, now, (sessions, now) => {

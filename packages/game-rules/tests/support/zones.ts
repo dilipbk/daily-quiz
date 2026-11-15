@@ -1,7 +1,10 @@
-import { addDays, localDateOf, type LocalDate } from '../../src/local-date.ts';
+import { addDays, type LocalDate } from '../../src/local-date.ts';
 
 // Test-only helpers. They use `Intl.supportedValuesOf` and `formatToParts`, which Node has
 // and Hermes doesn't document; nothing under `src/` may use either.
+//
+// They never call `localDateOf`. Every date here comes from the zone's UTC offset, a second
+// route to the same answer, so a test built on these helpers fails when `localDateOf` is wrong.
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
@@ -24,6 +27,12 @@ export function offsetMinutes(instant: number, zone: string): number {
   const [, sign, hours, minutes] = match;
   if (sign === undefined) return 0;
   return (sign === '-' ? -1 : 1) * (Number(hours) * 60 + Number(minutes));
+}
+
+/** The calendar date in a zone at an instant, worked out from the zone's UTC offset. */
+export function dateByOffset(instant: number, zone: string): LocalDate {
+  const shifted = instant + offsetMinutes(instant, zone) * 60_000;
+  return new Date(shifted).toISOString().slice(0, 10) as LocalDate;
 }
 
 /** The smallest instant in `(low, high]` for which `reached` holds; `reached` must be monotonic. */
@@ -51,7 +60,7 @@ function offsetChangesIn(zone: string, year: number): OffsetChange[] {
     const before = offsetMinutes(day, zone);
     if (offsetMinutes(day + DAY_MS, zone) === before) continue;
     const change = firstInstant(day, day + DAY_MS, (t) => offsetMinutes(t, zone) !== before);
-    changes.push({ zone, date: localDateOf(change, zone) });
+    changes.push({ zone, date: dateByOffset(change, zone) });
   }
   return changes;
 }
@@ -75,7 +84,7 @@ export function dayBounds(date: LocalDate, zone: string): { first: number; last:
     return firstInstant(
       utcMidnight - 15 * HOUR_MS,
       utcMidnight + 13 * HOUR_MS,
-      (t) => localDateOf(t, zone) >= day,
+      (t) => dateByOffset(t, zone) >= day,
     );
   };
   return { first: startOf(date), last: startOf(addDays(date, 1)) - 1 };

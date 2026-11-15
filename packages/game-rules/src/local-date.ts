@@ -14,13 +14,17 @@ const END_OF_RANGE_MS = 253_402_214_400_000;
 const MAX_CACHED_FORMATTERS = 1024;
 const formatters = new Map<string, Intl.DateTimeFormat>();
 
-function formatterFor(timeZone: string): Intl.DateTimeFormat {
+function formatterFor(timeZone: unknown): Intl.DateTimeFormat {
+  // A zone can arrive from JSON or plain JavaScript as anything. `Intl` reads an absent
+  // zone as the host's own, which would date a session by where the server happens to run.
+  if (typeof timeZone !== 'string' || timeZone === '') {
+    throw new RangeError(`Not a time zone: ${timeZone === '' ? '""' : String(timeZone)}`);
+  }
   const cached = formatters.get(timeZone);
   if (cached) return cached;
 
   let formatter: Intl.DateTimeFormat;
   try {
-    if (timeZone === '') throw new RangeError('empty');
     formatter = new Intl.DateTimeFormat('en-US', {
       timeZone,
       year: 'numeric',

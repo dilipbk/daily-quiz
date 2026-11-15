@@ -9,7 +9,7 @@ import {
 import { assertCount } from './validate.ts';
 
 /**
- * Whether a completed session extends the streak (STK-01, ruling R2): either daily set,
+ * Whether a completed session extends the streak (STK-01, ADR 0004): either daily set,
  * or any other source with enough questions. A Practice replay never does. The score
  * doesn't matter.
  */
@@ -39,7 +39,11 @@ export interface MilestoneHit {
 export interface StreakState {
   /** Credited days in the streak that is alive now. A frozen day keeps it alive but adds nothing. */
   current: number;
-  /** The longest streak ever reached. It survives a break. */
+  /**
+   * The longest streak in this replay. It survives a break. It is not a high-water mark:
+   * a late sync, or a day credited ahead of today, can lower it, so the server stores its
+   * own (ADR 0004).
+   */
   best: number;
   freezesHeld: number;
   status: StreakStatus;
@@ -54,8 +58,9 @@ export interface StreakState {
  * The streak that follows from a set of credited local dates, seen on `today`.
  *
  * It is a replay of the rule over the whole set, so duplicates and the order the dates
- * arrived in can't change the answer (roadmap §4.3 item 4), and a session that syncs late
- * for a day a freeze had covered gives that freeze back.
+ * arrived in can't change the answer (roadmap §4.3 item 4). A session that syncs late is
+ * replayed with the rest. It usually returns the freeze that had covered its day, and it
+ * can also change what followed, even end a streak that looked alive (ADR 0004).
  *
  * The rule, day by day: a credited day adds one, and a milestone grants freezes up to the
  * most a player may hold. A day that is over with no credit is covered by a held freeze;

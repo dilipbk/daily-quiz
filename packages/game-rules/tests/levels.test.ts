@@ -6,7 +6,7 @@ import { DEFAULT_GAME_RULES, type GameRules } from '../src/rules.ts';
 
 const withStep = (stepXp: number): GameRules => ({ ...DEFAULT_GAME_RULES, levels: { stepXp } });
 
-describe('the level curve (XP-02, ruling R4)', () => {
+describe('the level curve (XP-02, ADR 0004)', () => {
   it.each([
     [1, 0],
     [2, 20],
@@ -69,6 +69,35 @@ describe('the level curve (XP-02, ruling R4)', () => {
   it.each([0, -20, Number.NaN])('refuses a step of %j XP from the rules', (stepXp) => {
     expect(() => levelForXp(100, withStep(stepXp))).toThrow(RangeError);
     expect(() => xpToReachLevel(2, withStep(stepXp))).toThrow(RangeError);
+  });
+
+  // With a step that is not a whole number, the square-root shortcut alone lands a level out
+  // for each of these totals. The answer must still agree with `xpToReachLevel`.
+  it.each([
+    [82, 0.1],
+    [3, 0.2],
+    [132, 1.1],
+    [330, 1.1],
+    [201, 0.01],
+  ])('keeps %i XP inside its level at a step of %f XP', (total, stepXp) => {
+    const rules = withStep(stepXp);
+    const level = levelForXp(total, rules);
+    expect(xpToReachLevel(level, rules)).toBeLessThanOrEqual(total);
+    expect(xpToReachLevel(level + 1, rules)).toBeGreaterThan(total);
+    expect(levelProgress(total, rules).xpIntoLevel).toBeGreaterThanOrEqual(0);
+  });
+
+  it('keeps any XP total inside its level for a step that is not a whole number', () => {
+    const fractionalStep = fc.double({ min: 0.01, max: 50, noNaN: true });
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 10_000_000 }), fractionalStep, (total, stepXp) => {
+        const rules = withStep(stepXp);
+        const level = levelForXp(total, rules);
+        expect(xpToReachLevel(level, rules)).toBeLessThanOrEqual(total);
+        expect(xpToReachLevel(level + 1, rules)).toBeGreaterThan(total);
+      }),
+      { numRuns: 1000 },
+    );
   });
 
   const xp = fc.integer({ min: 0, max: 1_000_000_000 });

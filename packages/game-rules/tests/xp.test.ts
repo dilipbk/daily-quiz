@@ -63,6 +63,23 @@ describe('sessionXp (XP-01)', () => {
     },
   );
 
+  it('rounds a Practice replay down, not up, when its share is not a whole number', () => {
+    // 5 for the session and 6 for the answers make 11; half of 11 is 5.5.
+    expect(
+      sessionXp(
+        { source: 'quiz', mode: 'practice', correctAnswers: 3, totalQuestions: 5 },
+        withXpRules({ perSession: 5 }),
+      ),
+    ).toBe(5);
+    // The usual 16, at a quarter, is exactly 4; one more correct answer makes 18, and 4.5.
+    expect(
+      sessionXp(
+        { source: 'quiz', mode: 'practice', correctAnswers: 4, totalQuestions: 5 },
+        withXpRules({ practiceFactor: 0.25 }),
+      ),
+    ).toBe(4);
+  });
+
   it('reads every amount from the rules', () => {
     const rules = withXpRules({ perSession: 5, perCorrectAnswer: 1, perfectBonus: 0 });
     const perfect = {
