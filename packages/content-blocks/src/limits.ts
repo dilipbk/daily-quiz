@@ -1,5 +1,5 @@
 /**
- * Size limits for content blocks (ADR 0003). Lengths are counted in Unicode code points, so a
+ * Size limits for content blocks (ADR 0008). Lengths are counted in Unicode code points, so a
  * letter, a CJK character and an emoji each count once. Editors and the content pipeline read
  * their limits here, so they can't drift from what validation enforces.
  */

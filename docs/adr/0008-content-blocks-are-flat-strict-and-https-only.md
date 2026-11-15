@@ -1,4 +1,4 @@
-# 0003. Content blocks are a flat, strict schema, and a link has one canonical https spelling
+# 0008. Content blocks are a flat, strict schema, and a link has one canonical https spelling
 
 | | |
 |---|---|

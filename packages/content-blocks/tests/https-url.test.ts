@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { isHttpsUrl } from '../src/index.ts';
 
 // SEC-08: "Links in content are https-only." Where the spec is silent the reading is the strict
-// one (ADR 0003): one canonical, all-ASCII spelling that every URL parser reads the same way.
+// one (ADR 0008): one canonical, all-ASCII spelling that every URL parser reads the same way.
 
 describe('isHttpsUrl', () => {
   it.each([

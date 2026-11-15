@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { expectValid, link, paragraph, reasons, text } from './support.ts';
 
 // The spec sets no sizes and names no character rules, so these are the strict reading recorded
-// in ADR 0003. The numbers are written out here on purpose: a changed limit must fail a test.
+// in ADR 0008. The numbers are written out here on purpose: a changed limit must fail a test.
 
 const listOf = (...items: unknown[]) => ({
   type: 'list',

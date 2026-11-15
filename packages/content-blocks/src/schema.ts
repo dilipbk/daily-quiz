@@ -4,7 +4,7 @@ import type { HttpsUrlProblem } from './https-url.ts';
 import type { BlockIssueCode } from './issue.ts';
 import { blockLimits } from './limits.ts';
 
-// Three properties hold for every schema here (ADR 0003):
+// Three properties hold for every schema here (ADR 0008):
 // - Objects are strict. A key the schema doesn't name is an error, never ignored, which is what
 //   keeps HTML, styles and handlers out of content (SEC-08).
 // - Nothing transforms its input, so what passes validation is exactly what was stored.
