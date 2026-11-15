@@ -1,0 +1,41 @@
+[smoke] web: 31 pass, 0 fail, 9 skipped
+[smoke] pass | JavaScript engine | browser engine
+[smoke] pass | Unicode property escapes (regex literals, u flag) | \p{L} \p{M} \p{Z} \p{Cc} \p{Cf} \p{Cs}
+[smoke] pass | Object.hasOwn | own key true, inherited key false
+[smoke] pass | Array.prototype.at | at(-1) is 'c'
+[smoke] pass | String.prototype.normalize (NFD) | 'é' in NFD has length 2
+[smoke] pass | Intl.DateTimeFormat with a time zone | Kathmandu 01/02/2026, Los Angeles 12/31/2025
+[smoke] pass | zod 4 | strictObject and discriminatedUnion accept valid, reject invalid
+[smoke] pass | Expo SDK and React Native | SDK 58.0.0
+[smoke] skipped | expo-dev-client | not on web
+[smoke] pass | Expo Router with NativeTabs | NativeTabs loaded
+[smoke] pass | @expo/ui | Host loaded
+[smoke] pass | expo-symbols | SymbolView loaded
+[smoke] pass | expo-glass-effect | liquid glass available: false
+[smoke] pass | Unistyles | theme: light
+[smoke] skipped | Nitro Modules | not on web
+[smoke] pass | Reanimated | Reanimated 4.7.1
+[smoke] skipped | Worklets (UI runtime) | not on web
+[smoke] pass | Gesture Handler | GestureDetector loaded
+[smoke] pass | Skia | created a paint
+[smoke] pass | react-native-svg | Svg loaded
+[smoke] pass | FlashList | FlashList loaded
+[smoke] pass | XState | presenting → revealing
+[smoke] pass | Zustand | store updated
+[smoke] pass | MMKV | wrote and read a key
+[smoke] pass | TanStack Query persisted to MMKV | cache written to MMKV
+[smoke] skipped | expo-secure-store | not on web
+[smoke] pass | i18next with ICU, expo-localization | 1 question, 5 questions; device locale en-US; PluralRules built in
+[smoke] skipped | expo-haptics | not on web
+[smoke] pass | expo-audio | createAudioPlayer loaded
+[smoke] pass | expo-image | Image loaded
+[smoke] pass | expo-video | VideoView loaded
+[smoke] pass | expo-sharing | available: false
+[smoke] skipped | expo-notifications | not on web
+[smoke] pass | expo-updates | enabled: true, runtime 
+[smoke] pass | expo-web-browser | openBrowserAsync loaded
+[smoke] skipped | expo-apple-authentication | not on web
+[smoke] skipped | Google sign-in | not on web
+[smoke] skipped | Better Auth Expo client | not on web
+[smoke] pass | PostHog | constructed, disabled: true
+[smoke] pass | Sentry | SDK 8.28.0, not initialised
