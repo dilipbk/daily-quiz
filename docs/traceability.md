@@ -22,7 +22,7 @@ Every requirement the spec marks for the MVP, and the ticket or tickets in `docs
 | D5-02 | Either daily counts toward streak and goal | BE-18, FE-12 | todo |
 | STK-01 | Streak increments once per local day on a qualifying session | ENG-03, BE-06 | todo |
 | STK-02 | Server authoritative; client optimistic | BE-06, FE-07 | todo |
-| STK-03 | Local-day boundary, time-zone credit limit, DST safe | ENG-03, BE-06 | todo |
+| STK-03 | Local-day boundary at the completion instant, no time-zone credit limit (ADR 0003), DST safe | ENG-03, BE-06 | todo |
 | STK-04 | Automatic freeze, hold up to 2, earned at milestones | ENG-03, BE-11 | todo |
 | STK-06 | Milestone celebrations and badges | ENG-03, BE-11, FE-12 | todo |
 | XP-01 | XP formula | ENG-03, BE-06 | todo |
