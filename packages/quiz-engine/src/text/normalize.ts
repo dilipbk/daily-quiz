@@ -29,9 +29,9 @@ const FOLDED_LETTERS = new RegExp(`[${Object.keys(letterFolds).join('')}]`, 'g')
 // The underscore and both slashes join words, so they separate them here.
 const WORD_JOINERS = /[_/\\]/g;
 
-// Hyphens, dashes and the minus sign. One separates words too, unless it begins a number.
-const DASHES = /[-\u2010-\u2015\u2212]/g;
-const isDash = (character: string): boolean => /^[-\u2010-\u2015\u2212]$/.test(character);
+// A hyphen, a dash or the minus sign. One separates words too, unless it begins a number.
+const DASH = /[-\u2010-\u2015\u2212]/;
+const DASHES = new RegExp(DASH.source, 'g');
 
 // Punctuation and quotation marks that carry no part of an answer, and characters that can't be
 // seen: the soft hyphen, zero-width spaces and joiners, direction marks, the word joiner and the
@@ -53,7 +53,8 @@ const isAsciiDigit = (character: string | undefined): boolean =>
 function beginsNumber(text: string, offset: number): boolean {
   const before = text[offset - 1];
   return (
-    isAsciiDigit(text[offset + 1]) && (before === undefined || /\s/.test(before) || isDash(before))
+    isAsciiDigit(text[offset + 1]) &&
+    (before === undefined || /\s/.test(before) || DASH.test(before))
   );
 }
 
