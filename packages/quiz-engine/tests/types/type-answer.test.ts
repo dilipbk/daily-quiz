@@ -347,11 +347,49 @@ describe('type_answer grading', () => {
       expect(grade(-5, text), text).toBe('correct');
     }
     // Letters and symbols that are no listed unit, on an answer long enough to allow typos.
-    for (const text of ['12345k', '12345%', '1e2345', '$12345', '12345.', '(12345)']) {
+    for (const text of ['12345k', '12345%', '1e2345', '$12345', '(12345)', '[12345]']) {
       expect(grade(12345, text), text).toBe('incorrect');
     }
     expect(grade(123_456_789, '123456789 m')).toBe('incorrect');
     expect(grade(123_456_789, '123456789')).toBe('correct');
+  });
+
+  it('QT-03 sentence punctuation after a typed number is no part of the number', () => {
+    const grade = (value: number, text: string, units?: string[]) =>
+      gradeAnswer(
+        mvpRegistry,
+        numberQuestion({
+          accepted: [String(value)],
+          numeric: { value, tolerance: 0, ...(units === undefined ? {} : { units }) },
+        }),
+        typed(text),
+        context,
+      ).status;
+
+    // iOS types a full stop and a space when the space bar is pressed twice.
+    for (const text of ['5.', '5. ', '5!', '5?', '5,', '5;', '5:', '5 .', '5?!', '\uff15\uff0e']) {
+      expect(grade(5, text), text).toBe('correct');
+      expect(grade(-5, text), text).toBe('incorrect');
+      expect(grade(-5, `-${text}`), text).toBe('correct');
+    }
+    expect(grade(12_345, '12345.')).toBe('correct');
+    expect(grade(1000, '1,000.')).toBe('correct');
+    // After a listed unit too.
+    expect(grade(71, '71%.', ['%'])).toBe('correct');
+    expect(grade(71, '71 km!', ['km'])).toBe('correct');
+    expect(grade(71, '71 km!')).toBe('incorrect');
+    // A unit listed with its own full stop is still found, at the end and at the start.
+    expect(grade(5, '5 in.', ['in.'])).toBe('correct');
+    expect(grade(5, 'No. 5.', ['no.'])).toBe('correct');
+    // The limit, stated: more punctuation after that full stop takes the unit's own with it.
+    expect(grade(5, '5 in.!', ['in.'])).toBe('incorrect');
+    // Only at the end, and only these six: a bracket, a symbol or a letter still makes it no number.
+    for (const text of ['(5)', '5)', '.5', '!5', '5.x', '$5', '5%', '5k', '5-', '5/']) {
+      expect(grade(5, text), text).toBe('incorrect');
+    }
+    for (const text of ['(12345)', '$12345', '12345k', '12345%']) {
+      expect(grade(12_345, text), text).toBe('incorrect');
+    }
   });
 
   it('QT-03 an unlisted unit is wrong at every key length, and a listed one is read', () => {
@@ -390,6 +428,11 @@ describe('type_answer grading', () => {
         'number-both-separators',
         'number-separators-alike',
         'number-alias-in-words',
+        'number-full-stop',
+        'number-full-stop-and-space',
+        'number-exclamation',
+        'number-in-brackets',
+        'negative-sign-dropped-full-stop',
       ).failures,
     ).toEqual([]);
   });

@@ -217,11 +217,18 @@ export const typeAnswerFixtures: readonly GradingFixture[] = [
   // that is no minus, a sign left out and a letter that is no listed unit are all wrong.
   ...cases(numberQuestion(['5'], { value: 5, tolerance: 0 }), [
     ['number-after-dash', typed('\u20135'), incorrect()],
+    // Sentence punctuation after the number is no part of it: a phone types ". " on a double
+    // space. A bracket is no sentence punctuation.
+    ['number-full-stop', typed('5.'), correct()],
+    ['number-full-stop-and-space', typed('5. '), correct()],
+    ['number-exclamation', typed('5!'), correct()],
+    ['number-in-brackets', typed('(5)'), incorrect()],
   ]),
   ...cases(numberQuestion(['-5'], { value: -5, tolerance: 0 }), [
     ['negative', typed('-5'), correct()],
     ['negative-minus-sign', typed('\u22125'), correct()],
     ['negative-sign-dropped', typed('(5)'), incorrect()],
+    ['negative-sign-dropped-full-stop', typed('5.'), incorrect()],
   ]),
   ...cases(numberQuestion(['123456789'], { value: 123456789, tolerance: 0 }), [
     ['number-then-letter', typed('123456789k'), incorrect()],

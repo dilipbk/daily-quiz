@@ -168,9 +168,8 @@ function checkTypeAnswer(question: {
 /** Lower case, in compatibility form and trimmed: how a unit and the text around a number are matched. */
 const plain = (text: string): string => text.normalize('NFKC').trim().toLowerCase();
 
-/** The typed text without one listed unit, taken from its end or, failing that, from its start. */
-function withoutUnit(text: string, units: readonly string[]): string {
-  const typedText = plain(text);
+/** `typedText` without one listed unit, taken from its end or, failing that, from its start. */
+function withoutUnit(typedText: string, units: readonly string[]): string {
   // The longest first, so "°c" goes whole where "c" is listed too.
   const longestFirst = units
     .map(plain)
@@ -182,6 +181,35 @@ function withoutUnit(text: string, units: readonly string[]): string {
 
   const beginning = longestFirst.find((unit) => typedText.startsWith(unit));
   return beginning === undefined ? typedText : typedText.slice(beginning.length);
+}
+
+const SENTENCE_END = '.!?,;:';
+
+/**
+ * `typedText` without the sentence punctuation after it, and the spaces around that. A phone
+ * types ". " when the space bar is pressed twice, so "5." is the answer 5 with a full stop, and
+ * not something other than a number. A walk back from the end: the work is the text's length.
+ */
+function withoutSentenceEnd(typedText: string): string {
+  let end = typedText.length;
+  for (; end > 0; end -= 1) {
+    const last = typedText.charAt(end - 1);
+    if (!SENTENCE_END.includes(last) && last.trim() !== '') break;
+  }
+  return typedText.slice(0, end);
+}
+
+/**
+ * Every number the typed text can mean on a key with these units: as it was typed, and where
+ * that reads as no number, without the sentence punctuation after it. A listed unit is removed
+ * either way, so "71%." is read and so is "5 in." where the unit is listed with its full stop.
+ */
+function numberReadingsOf(text: string, units: readonly string[]): readonly number[] {
+  const typedText = plain(text);
+  const asTyped = parseNumberReadings(withoutUnit(typedText, units));
+  return asTyped.length > 0
+    ? asTyped
+    : parseNumberReadings(withoutUnit(withoutSentenceEnd(typedText), units));
 }
 
 /** Inclusive, with a guard against binary rounding: 0.4 is within 0.1 of 0.3. */
@@ -259,7 +287,7 @@ function gradeTypedAnswer(
   // digit, such as "one thousand", goes on to be matched with the accepted entries.
   if (key.numeric !== undefined) {
     const { numeric } = key;
-    const readings = parseNumberReadings(withoutUnit(text, numeric.units ?? []));
+    const readings = numberReadingsOf(text, numeric.units ?? []);
     if (readings.some((reading) => isWithinTolerance(reading, numeric))) return correct();
     if (HAS_DIGIT.test(input)) return incorrect();
   }
