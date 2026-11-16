@@ -86,6 +86,12 @@ describe('normalizeAnswerText', () => {
     // A vector arrow over a symbol, and a ligature tie made of two half marks.
     expect(normalize('v\u20d7')).toBe('v');
     expect(normalize('t\ufe20s\ufe21')).toBe('ts');
+    // The Cyrillic marks of the Cyrillic block itself, U+0483 to U+0489, are in none of the five.
+    for (const mark of [0x0483, 0x0487, 0x0489]) {
+      const marked = `e${String.fromCodePoint(mark)}z`;
+
+      expect(normalize(marked), `U+0${mark.toString(16)}`).toBe(marked);
+    }
   });
 
   it('QT-03 diacritics: marks that carry meaning in other scripts are kept', () => {

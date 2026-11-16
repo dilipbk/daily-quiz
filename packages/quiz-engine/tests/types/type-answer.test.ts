@@ -225,6 +225,11 @@ describe('type_answer grading', () => {
     expect(grade('Henry VIII', 'Hnery VIII')).toBe('correct');
     expect(grade('World War II', 'Wrold War II')).toBe('correct');
     expect(grade('Vitamin C', 'Vitamn C')).toBe('correct');
+    // The limits, stated. A letter that is no numeral is not protected, and an initial that is
+    // one can't be left out: the first needs a rejected entry and the second an alias.
+    expect(grade('Vitamin E', 'Vitamin A')).toBe('correct');
+    expect(grade('John D. Rockefeller', 'John Rockefeller')).toBe('incorrect');
+    expect(grade('Liv Tyler', 'Lib Tyler')).toBe('incorrect');
     // "Mississippi" is no numeral, and nor is a word that only holds numeral letters out of order.
     expect(grade('Mississippi', 'Missisippi')).toBe('correct');
     expect(grade('Vivid Dreams', 'Vivd Dreams')).toBe('correct');
@@ -500,6 +505,12 @@ describe('type_answer grading', () => {
       expect(grade(5, text), text).toBe('incorrect');
     }
     expect(grade(-5, '(5)')).toBe('incorrect');
+    // The limit, stated: an entry that is a number outside the tolerance accepts nothing.
+    const inThousands = numberQuestion({
+      accepted: ['1.5', '1500'],
+      numeric: { value: 1.5, tolerance: 0 },
+    });
+    expect(gradeAnswer(mvpRegistry, inThousands, typed('1500'), context)).toEqual(incorrect());
     // A rejected entry is wrong before any of this is asked.
     const listedTwice = numberQuestion({
       accepted: ['12', '12 months'],
