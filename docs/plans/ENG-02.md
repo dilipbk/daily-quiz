@@ -1011,7 +1011,7 @@ The grader, in order. `n(x)` is `normalizeAnswerText(x, locale, tunables.article
 
 **Interfaces:** Consumes Tasks 1–8. Produces the package's two entry points exactly as listed in Public API, `scoringFixtures`, `runSharedFixtures`.
 
-- [ ] **Step 1: Write the scoring fixtures** (config: `specScoringConfig`; cite §10.5, and D13 where marked).
+- [x] **Step 1: Write the scoring fixtures** (config: `specScoringConfig`; cite §10.5, and D13 where marked).
 
 | Fixture id                          | Inputs                                                      | Expected                                                           |
 | ----------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
@@ -1025,13 +1025,15 @@ The grader, in order. `n(x)` is `normalizeAnswerText(x, locale, tunables.article
 | `scoring/unanswered-and-invalid`    | unanswered, then invalid; multiplier 1                      | total 0; `correctCount` 0; `questionCount` 2                       |
 | `scoring/rounding`                  | one correct, multiplier 1.15, 10 000 of 30 000 ms           | base 115, speed 38; total 153                                      |
 
-- [ ] **Step 2: Write the failing tests.**
+- [x] **Step 2: Write the failing tests.**
   - `tests/fixtures.test.ts › QT-02: every shared fixture passes` now asserts `runSharedFixtures()` returns `failures: []` and `ran` equal to `gradingFixtures.length + scoringFixtures.length`.
   - `› every registered type has a fixture for correct, incorrect, unanswered and invalid`: computed from `mvpRegistry.types`, so a new type without fixtures fails here.
   - `tests/types/catalogue.test.ts › QT-01: the five MVP types are registered`: `mvpRegistry.types` equals `['single_choice', 'true_false', 'image_choice', 'type_answer', 'ordering']`; `specMvpTunables` parses with `mvpRegistry.tunablesSchema`; each module's `timeClass` matches the table in Public API.
   - `tests/public-api.test.ts › the package exports what the plan lists and nothing else`: the sorted keys of `import('../src/index.ts')` and of `import('../src/fixtures/index.ts')` equal two literal lists. ENG-04 builds on this surface, so growing it is a deliberate edit to this test.
-- [ ] **Step 3: Run, fail. Step 4: Implement** `src/index.ts` as re-exports, the scoring fixtures and `runSharedFixtures`. **Step 5: Run, pass; `pnpm verify`.**
-- [ ] **Step 6: Commit.** `feat(quiz-engine): publish the engine's API and its shared fixtures (ENG-02)`
+- [x] **Step 3: Run, fail. Step 4: Implement** `src/index.ts` as re-exports, the scoring fixtures and `runSharedFixtures`. **Step 5: Run, pass; `pnpm verify`.**
+- [x] **Step 6: Commit.** `feat(quiz-engine): publish the engine's API and its shared fixtures (ENG-02)`
+
+> **As built (2026-11-16), with three PM rulings made after Task 8.** (a) `maxResponseLength` (256 UTF-16 units) is exported, so the app can cap its answer field at the number the schema holds: `tests/public-api.test.ts › maxResponseLength is the cap the answer schema holds, so an answer field capped at it never sends a malformed answer`. (b) The key schema refuses a `maxTypos` above the 3 edits grading honours, in its own commit: `tests/types/type-answer.test.ts › the schema refuses a maxTypos above the 3 edits that grading honours`. (c) `ErasedQuestionTypeModule` stays internal, and the type `ArticlesByLanguage` is exported because `normalizeAnswerText`'s signature names it. (d) Types can't be listed at run time, so the type half of the surface is held by a test that reads the two entry points: `tests/node/boundaries.test.ts › the package exports the types the plan lists, and ErasedQuestionTypeModule stays internal`. It also refuses `export *`. (e) Three tests beyond the list hold the scoring fixtures to their requirements: one checks each is sound, `§10.5: the shared fixture for the DS-01 example scores 112`, and `D13: the shared fixtures at and beyond the Standard limit keep their base points and earn no speed bonus`. (f) `QT-01: the five MVP types are registered` and `every registered type has a fixture for correct, incorrect, unanswered and invalid` passed when written, because Tasks 5 to 8 had built what they check. Each was then seen failing against a deliberate break: the list reordered, a time class changed, a fixture removed.
 
 ### Task 10: Proofs, ADRs, traceability
 

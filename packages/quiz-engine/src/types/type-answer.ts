@@ -15,7 +15,10 @@ import { parseNumberReadings } from '../text/number.ts';
 // Hard caps. They bound the work one answer can cause on the completion endpoint, where the
 // text comes from the player's device, so they are constants and not tunables.
 
-/** The longest typed answer, in UTF-16 units: the size the text has in memory. */
+/**
+ * The longest typed answer, in UTF-16 units: the size the text has in memory, and what
+ * `text.length` counts. Public, so the app can cap its answer field at the same number.
+ */
 export const maxResponseLength = 256;
 /** The longest accepted or rejected entry, or unit, in characters. */
 const maxEntryLength = 120;
