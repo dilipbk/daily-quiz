@@ -173,6 +173,34 @@ describe('type_answer grading', () => {
     ).toEqual([]);
   });
 
+  it('R6a: a Roman numeral must match exactly, and a typo beside it is still forgiven', () => {
+    const grade = (accepted: string, text: string) =>
+      gradeAnswer(mvpRegistry, textQuestion({ accepted: [accepted] }), typed(text), context).status;
+
+    expect(grade('Henry VIII', 'Henry VII')).toBe('incorrect');
+    expect(grade('Louis XVI', 'Louis XIV')).toBe('incorrect');
+    expect(grade('World War II', 'World War I')).toBe('incorrect');
+    expect(grade('World War I', 'World War II')).toBe('incorrect');
+    expect(grade('Super Bowl LIV', 'Super Bowl LV')).toBe('incorrect');
+    // A numeral that is gone, or run into its neighbour, is no longer that numeral.
+    expect(grade('Henry VIII', 'Henry')).toBe('incorrect');
+    expect(grade('Henry VIII', 'HenryVIII')).toBe('incorrect');
+    // One letter can be a numeral too: C is 100 and D is 500.
+    expect(grade('Vitamin C', 'Vitamin D')).toBe('incorrect');
+
+    expect(grade('Henry VIII', 'henry viii')).toBe('correct');
+    expect(grade('Henry VIII', 'Hnery VIII')).toBe('correct');
+    expect(grade('World War II', 'Wrold War II')).toBe('correct');
+    expect(grade('Vitamin C', 'Vitamn C')).toBe('correct');
+    // "Mississippi" is no numeral, and nor is a word that only holds numeral letters out of order.
+    expect(grade('Mississippi', 'Missisippi')).toBe('correct');
+    expect(grade('Vivid Dreams', 'Vivd Dreams')).toBe('correct');
+  });
+
+  it('R6a: the shared fixtures for Roman numerals', () => {
+    expect(runFixtures('roman-numeral-differs', 'roman-numeral-typo-beside').failures).toEqual([]);
+  });
+
   it('QT-03 typo thresholds are tunable', () => {
     const paris = textQuestion({ accepted: ['Paris'] });
     const iran = textQuestion({ accepted: ['Iran'] });

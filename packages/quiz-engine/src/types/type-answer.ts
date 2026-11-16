@@ -10,7 +10,8 @@ import { parseNumberReadings } from '../text/number.ts';
 // as a number where the key holds one, and forgiven a typo or two where the answer is long enough
 // to tell a slip from another answer. A wrong fact costs more than a missing quiz, so each
 // leniency has a stop: short answers get no typos, a number must match in its digits, its
-// separator and its sign, and a near-miss the author listed is wrong however it is reached.
+// separator and its sign, a Roman numeral must match letter for letter, and a near-miss the
+// author listed is wrong however it is reached.
 
 // Hard caps. They bound the work one answer can cause on the completion endpoint, where the
 // text comes from the player's device, so they are constants and not tunables.
@@ -214,6 +215,23 @@ const NUMBER = /-?[0-9]+(?:[.,][0-9]+)*/g;
  */
 const numbersOf = (text: string): string => (text.match(NUMBER) ?? []).join(' ').replace(/,/g, '.');
 
+// A valid Roman numeral in lower case, as normalization leaves it. Anchored at both ends, with
+// every repetition bounded.
+const ROMAN_NUMERAL = /^m{0,3}(?:cm|cd|d?c{0,3})(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3})$/;
+
+/** The Roman numerals in a normalized text, in order. Only a whole word is one (reading R6a). */
+const romanNumeralsOf = (text: string): string =>
+  text
+    .split(' ')
+    .filter((word) => word !== '' && ROMAN_NUMERAL.test(word))
+    .join(' ');
+
+/**
+ * What no typo may touch: the numbers in a text and its Roman numerals. Two texts with the same
+ * stops differ, if they differ at all, somewhere else.
+ */
+const stopsOf = (text: string): string => `${numbersOf(text)}/${romanNumeralsOf(text)}`;
+
 const HAS_DIGIT = /[0-9]/;
 
 const codePointLength = (text: string): number => Array.from(text).length;
@@ -249,13 +267,13 @@ function gradeTypedAnswer(
   const accepted = key.accepted.map(normalize).filter((entry) => entry !== '');
   if (accepted.includes(input)) return correct();
 
-  // A typo: within the edits its length allows, with every number as in the answer, and strictly
-  // closer to the answer than to anything rejected. Each distance is cut off at a few edits, so
-  // its work is bounded by the lengths the schemas cap.
-  const inputNumbers = numbersOf(input);
+  // A typo: within the edits its length allows, with every number and Roman numeral as in the
+  // answer, and strictly closer to the answer than to anything rejected. Each distance is cut
+  // off at a few edits, so its work is bounded by the lengths the schemas cap.
+  const inputStops = stopsOf(input);
   const isTypoOf = (entry: string): boolean => {
     const allowed = allowedTypos(codePointLength(entry), tunables.typoThresholds, key.maxTypos);
-    if (!(allowed > 0) || numbersOf(entry) !== inputNumbers) return false;
+    if (!(allowed > 0) || stopsOf(entry) !== inputStops) return false;
 
     const distance = editDistance(input, entry, allowed);
     return (

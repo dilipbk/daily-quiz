@@ -123,6 +123,11 @@ export const typeAnswerFixtures: readonly GradingFixture[] = [
   ]),
   ...cases(textQuestion(['Apollo-11']), [['hyphen-before-number', typed('Apollo 11'), correct()]]),
   ...cases(textQuestion(['Jean-Paul']), [['hyphen-between-words', typed('Jean Paul'), correct()]]),
+  // A Roman numeral is a number too: one letter more or fewer is another king.
+  ...cases(textQuestion(['Henry VIII']), [
+    ['roman-numeral-differs', typed('Henry VII'), incorrect()],
+    ['roman-numeral-typo-beside', typed('Hnery VIII'), correct()],
+  ]),
   // A near-miss the author listed: wrong when typed exactly, and wrong when a slip is as close
   // to it as to the answer.
   ...cases(textQuestion(['Australia'], { rejected: ['Austria'] }), [
