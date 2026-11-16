@@ -83,6 +83,31 @@ describe('scoring properties', () => {
     );
   });
 
+  it("no multiplier, however large, earns a base above the config's top anchor", () => {
+    const anyMultiplier = fc.oneof(
+      multiplier,
+      fc.double({ min: 0, max: 1e12, noNaN: true }),
+      fc.constantFrom(Number.MAX_VALUE, Number.POSITIVE_INFINITY, Number.NaN, -1),
+    );
+
+    fc.assert(
+      fc.property(
+        scoreInput,
+        anyMultiplier,
+        streakBefore,
+        scoringConfig,
+        (input, any, streak, config) => {
+          const score = scoreAnswer({ ...input, difficultyMultiplier: any }, streak, config);
+
+          expect(score.base).toBeLessThanOrEqual(
+            Math.round(config.basePoints * config.difficulty.maxMultiplier),
+          );
+          expect(Object.values(score).every(isWholePoints)).toBe(true);
+        },
+      ),
+    );
+  });
+
   it('the speed bonus never exceeds round(base × speedBonusMaxRatio) and never rises as elapsed time rises', () => {
     fc.assert(
       fc.property(

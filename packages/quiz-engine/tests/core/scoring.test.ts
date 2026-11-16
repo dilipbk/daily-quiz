@@ -170,6 +170,35 @@ describe('scoreAnswer', () => {
     expect(difficultyMultiplier(2400, tenths)).toBe(0.9);
   });
 
+  it("§10.5 a multiplier beyond the config's anchors scores as the anchor it passed", () => {
+    const scoreWith = (difficultyMultiplier: number, timing: ScoreTiming = untimed) =>
+      scoreAnswer({ grade: correct(), difficultyMultiplier, timing }, 0, C);
+
+    expect(scoreWith(1e9).base).toBe(150);
+    expect(scoreWith(Number.MAX_VALUE).base).toBe(150);
+    expect(scoreWith(1.5000001).base).toBe(150);
+    expect(scoreWith(0.1).base).toBe(80);
+    // The speed bonus is a share of the base it is given, so it is held with it.
+    expect(scoreWith(1e9, timed(0, 20_000))).toEqual({
+      base: 150,
+      speedBonus: 75,
+      combo: 0,
+      total: 225,
+      streak: 1,
+    });
+    // The anchors are the config's, not the spec's.
+    const wide = { ...C, difficulty: { ...C.difficulty, minMultiplier: 0.5, maxMultiplier: 3 } };
+    const widely = (difficultyMultiplier: number) =>
+      scoreAnswer({ grade: correct(), difficultyMultiplier, timing: untimed }, 0, wide).base;
+    expect(widely(2)).toBe(200);
+    expect(widely(1e9)).toBe(300);
+    expect(widely(0.1)).toBe(50);
+    // No multiplier at all still earns nothing.
+    for (const garbage of [0, -2, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+      expect(scoreWith(garbage).base, String(garbage)).toBe(0);
+    }
+  });
+
   it('time at, just inside and beyond the limit', () => {
     const bonusAt = (elapsedMs: number) =>
       scoreAnswer(
@@ -272,6 +301,8 @@ describe('scoreAnswer', () => {
       { ...C, difficulty: { ...C.difficulty, minMultiplier: 1.6 } },
       { ...C, difficulty: { ...C.difficulty, minMultiplier: 0 } },
       { ...C, difficulty: { ...C.difficulty, maxMultiplier: Number.POSITIVE_INFINITY } },
+      { ...C, difficulty: { ...C.difficulty, maxMultiplier: 10.5 } },
+      { ...C, difficulty: { ...C.difficulty, minMultiplier: 11, maxMultiplier: 11 } },
       { ...C, difficulty: { ...C.difficulty, curve: 'linear' } },
       { ...C, basePoints: 99.5 },
       { ...C, basePoints: 0 },
@@ -300,18 +331,30 @@ describe('scoreAnswer', () => {
       { ...input, difficultyMultiplier: 0 },
       { ...input, difficultyMultiplier: -1 },
       { ...input, difficultyMultiplier: Number.NaN },
+      { ...input, difficultyMultiplier: 1e9 },
+      { ...input, difficultyMultiplier: 10.5 },
+      { ...input, difficultyMultiplier: Number.POSITIVE_INFINITY },
       { ...input, grade: { status: 'correct', credit: 0.5 } },
       { ...input, grade: { status: 'incorrect', credit: 1 } },
     ];
     for (const refused of refusedInputs) {
       expect(scoreInputSchema.safeParse(refused).success, JSON.stringify(refused)).toBe(false);
     }
+
+    // One ceiling for both: the largest multiplier a config can produce is one an input may carry.
+    const steepest = { ...C, difficulty: { ...C.difficulty, maxMultiplier: 10 } };
+    expect(scoringConfigSchema.safeParse(steepest).success).toBe(true);
+    expect(scoreInputSchema.safeParse({ ...input, difficultyMultiplier: 10 }).success).toBe(true);
   });
 
   it('rounds base and speed bonus half up, takes the bonus from the rounded base, and leaves the combo flat', () => {
     // 161 × 0.5 is 80.5, so base is 81. Half of 81 is 40.5, so an instant answer earns 41: a bonus
-    // taken from the unrounded 80.5 would be 40.
-    const config: ScoringConfig = { ...C, basePoints: 161 };
+    // taken from the unrounded 80.5 would be 40. The anchors are widened to take a multiplier of 0.5.
+    const config: ScoringConfig = {
+      ...C,
+      basePoints: 161,
+      difficulty: { ...C.difficulty, minMultiplier: 0.5 },
+    };
 
     expect(
       scoreAnswer(

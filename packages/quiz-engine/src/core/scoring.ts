@@ -23,14 +23,22 @@ export interface ScoringConfig {
   readonly comboCap: number;
 }
 
+/**
+ * The largest difficulty multiplier a config or an answer may carry. A hard cap and not a
+ * tunable: it bounds what one answer can score when the number comes from outside.
+ */
+const maxDifficultyMultiplier = 10;
+
+const multiplierSchema = z.number().positive().max(maxDifficultyMultiplier);
+
 export const scoringConfigSchema: z.ZodType<ScoringConfig> = z.strictObject({
   basePoints: z.int().positive(),
   difficulty: z
     .strictObject({
       minRating: z.number(),
       maxRating: z.number(),
-      minMultiplier: z.number().positive(),
-      maxMultiplier: z.number().positive(),
+      minMultiplier: multiplierSchema,
+      maxMultiplier: multiplierSchema,
     })
     .refine(({ minRating, maxRating }) => minRating < maxRating, {
       error: 'minRating must be below maxRating: the multiplier is a line between the two.',
@@ -59,9 +67,9 @@ export const specScoringConfig: ScoringConfig = Object.freeze({
   comboCap: 50,
 });
 
-// The two guards below are why scoring can't return NaN, a fraction or a negative number, whatever
-// it is handed. The schemas above refuse impossible values; these hold for a caller that skipped
-// them, and garbage then earns nothing rather than something.
+// The guards below are why scoring can't return NaN, a fraction, a negative number or more than
+// the config allows, whatever it is handed. The schemas refuse impossible values; these hold for
+// a caller that skipped them, and garbage then earns nothing rather than something.
 
 /** A share from 0 to 1. NaN, which no comparison accepts, is 0. */
 const clamp01 = (value: number): number => (value > 0 ? Math.min(value, 1) : 0);
@@ -69,6 +77,15 @@ const clamp01 = (value: number): number => (value > 0 ? Math.min(value, 1) : 0);
 /** A count of points or of answers: a whole number, never negative, NaN or infinite. */
 const whole = (value: number): number =>
   Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
+
+/**
+ * A multiplier as scoring uses it: held between the config's two anchors, which is where
+ * `difficultyMultiplier` puts every rating. One that is no positive, finite number is 0.
+ */
+const withinAnchors = (multiplier: number, config: ScoringConfig['difficulty']): number =>
+  Number.isFinite(multiplier) && multiplier > 0
+    ? Math.min(config.maxMultiplier, Math.max(config.minMultiplier, multiplier))
+    : 0;
 
 /**
  * A question's multiplier from its rating: a line between the two anchors, flat beyond them. The
@@ -93,14 +110,17 @@ export type ScoreTiming =
 
 export interface ScoreInput {
   readonly grade: Grade;
-  /** Frozen into the session when it was built; see `difficultyMultiplier`. */
+  /**
+   * Frozen into the session when it was built; see `difficultyMultiplier`. Scoring holds it to
+   * the config's anchors, so a value from outside can't earn more than the hardest question.
+   */
   readonly difficultyMultiplier: number;
   readonly timing: ScoreTiming;
 }
 
 export const scoreInputSchema: z.ZodType<ScoreInput> = z.strictObject({
   grade: gradeSchema,
-  difficultyMultiplier: z.number().positive(),
+  difficultyMultiplier: multiplierSchema,
   timing: z.discriminatedUnion('timed', [
     z.strictObject({ timed: z.literal(false) }),
     z.strictObject({
@@ -139,7 +159,8 @@ export function scoreAnswer(
   const isCorrect = input.grade.status === 'correct';
 
   const credit = clamp01(input.grade.credit);
-  const base = whole(config.basePoints * input.difficultyMultiplier * credit);
+  const multiplier = withinAnchors(input.difficultyMultiplier, config.difficulty);
+  const base = whole(config.basePoints * multiplier * credit);
   const speedBonus = whole(base * config.speedBonusMaxRatio * shareOfLimitLeft(input.timing));
   const streak = isCorrect ? whole(streakBefore) + 1 : 0;
   const combo = isCorrect ? whole(Math.min(config.comboStep * (streak - 1), config.comboCap)) : 0;
