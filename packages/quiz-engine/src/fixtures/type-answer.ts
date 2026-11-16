@@ -15,6 +15,9 @@ const textQuestion = (accepted: string[], rest: { rejected?: string[]; maxTypos?
     key: { accepted, ...rest },
   }) satisfies Question;
 
+/** A text question that allows no typos, so only normalization can make an answer right. */
+const exactly = (accepted: string[]) => textQuestion(accepted, { maxTypos: 0 });
+
 const numberQuestion = (
   accepted: string[],
   numeric: { value: number; tolerance: number; units?: string[] },
@@ -142,6 +145,58 @@ export const typeAnswerFixtures: readonly GradingFixture[] = [
   ...cases(textQuestion(['C++']), [
     ['symbols-kept', typed('C'), incorrect()],
     ['symbols-exact', typed('c++'), correct()],
+  ]),
+
+  // What the JavaScript engine decides: its case mappings and its Unicode tables. A device's
+  // engine runs these fixtures and no other test, so each case here is one that another engine
+  // could grade differently. The characters are written as escapes, so that no editor can
+  // recompose them, and each question allows no typos.
+  //
+  // "Strasse" with a sharp s (U+00DF): lower-casing keeps it, and upper-casing writes "SS".
+  ...cases(exactly(['Stra\u00dfe']), [
+    ['sharp-s-capitals', typed('STRASSE'), correct()],
+    ['sharp-s-double-s', typed('strasse'), correct()],
+  ]),
+  ...cases(exactly(['Strasse']), [['double-s-sharp-s', typed('Stra\u00dfe'), correct()]]),
+  // "Istanbul" with the dotted capital I (U+0130): lower-casing writes "i" and a combining dot.
+  ...cases(exactly(['\u0130stanbul']), [
+    ['dotted-capital-i', typed('istanbul'), correct()],
+    ['dotted-capital-i-capitals', typed('ISTANBUL'), correct()],
+  ]),
+  // The Greek word "odos", which ends in a final sigma (U+03C2): typed in capitals, then with
+  // the other sigma (U+03C3) at its end.
+  ...cases(exactly(['\u039f\u03b4\u03cc\u03c2']), [
+    ['final-sigma-capitals', typed('\u039f\u0394\u039f\u03a3'), correct()],
+    ['final-sigma-medial', typed('\u03bf\u03b4\u03bf\u03c3'), correct()],
+  ]),
+  // A sigma that is final only until the bracket after it is removed: the Greek word "kosmos",
+  // typed in capitals with a stray bracket inside it.
+  ...cases(exactly(['\u039a\u03cc\u03c3\u03bc\u03bf\u03c2']), [
+    ['final-sigma-before-bracket', typed('\u039a\u039f\u03a3(\u039c\u039f\u03a3)'), correct()],
+  ]),
+  // Compatibility forms: full-width letters, the "fi" ligature (U+FB01) and a zero-width space.
+  ...cases(exactly(['Tokyo']), [
+    ['full-width-letters', typed('\uff34\uff4f\uff4b\uff59\uff4f'), correct()],
+  ]),
+  ...cases(exactly(['Sofia']), [['ligature', typed('So\ufb01a'), correct()]]),
+  ...cases(exactly(['Paris']), [['zero-width-space', typed('Pa\u200bris'), correct()]]),
+  // "Athina" in Greek, keyed with one code point for the accented eta (U+03AE): typed as eta
+  // and a combining tonos (U+0301), then with no accent.
+  ...cases(exactly(['\u0391\u03b8\u03ae\u03bd\u03b1']), [
+    ['greek-combining-mark', typed('\u0391\u03b8\u03b7\u0301\u03bd\u03b1'), correct()],
+    ['greek-mark-left-out', typed('\u0391\u03b8\u03b7\u03bd\u03b1'), correct()],
+  ]),
+  // "Fyodor" in Russian, keyed with one code point for the letter yo (U+0451): typed as ye and
+  // a combining diaeresis (U+0308), then with a plain ye, the way it is usually written.
+  ...cases(exactly(['\u0424\u0451\u0434\u043e\u0440']), [
+    ['cyrillic-combining-mark', typed('\u0424\u0435\u0308\u0434\u043e\u0440'), correct()],
+    ['cyrillic-mark-left-out', typed('\u0424\u0435\u0434\u043e\u0440'), correct()],
+  ]),
+  // "Sao Tome" with its tilde and its acute, keyed decomposed: the same answer in NFC, one code
+  // point for each accented letter, and in NFD, a letter and a combining mark.
+  ...cases(exactly(['Sa\u0303o Tome\u0301']), [
+    ['composed-nfc', typed('S\u00e3o Tom\u00e9'), correct()],
+    ['decomposed-nfd', typed('Sa\u0303o Tome\u0301'), correct()],
   ]),
 
   // Numbers are read with no locale: either separator may group thousands or mark the decimals.

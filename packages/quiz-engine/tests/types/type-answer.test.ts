@@ -67,6 +67,39 @@ describe('type_answer grading', () => {
     ).toEqual([]);
   });
 
+  // The cases whose outcome rests on the JavaScript engine's own case mappings and Unicode
+  // tables. The shared fixtures are the only tests that run on the device's engine, so each of
+  // these is a fixture, on a question that allows no typos.
+  it('QT-03 case, compatibility forms and combining marks, as shared fixtures', () => {
+    const names = [
+      'sharp-s-capitals',
+      'sharp-s-double-s',
+      'double-s-sharp-s',
+      'dotted-capital-i',
+      'dotted-capital-i-capitals',
+      'final-sigma-capitals',
+      'final-sigma-medial',
+      'final-sigma-before-bracket',
+      'full-width-letters',
+      'ligature',
+      'zero-width-space',
+      'greek-combining-mark',
+      'greek-mark-left-out',
+      'cyrillic-combining-mark',
+      'cyrillic-mark-left-out',
+      'composed-nfc',
+      'decomposed-nfd',
+    ];
+
+    expect(runFixtures(...names).failures).toEqual([]);
+    for (const fixture of gradingFixtures) {
+      if (names.some((name) => fixture.id === `type_answer/${name}`)) {
+        expect(fixture.question.key, fixture.id).toMatchObject({ maxTypos: 0 });
+        expect(fixture.expected, fixture.id).toEqual(correct());
+      }
+    }
+  });
+
   it('QT-03 numeric tolerance', () => {
     expect(
       runFixtures(
