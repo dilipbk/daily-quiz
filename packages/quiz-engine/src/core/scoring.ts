@@ -147,9 +147,12 @@ const shareOfLimitLeft = (timing: ScoreTiming): number =>
     : 0;
 
 /**
- * Points are integers. Base and speed bonus are each rounded half up, the speed bonus is a share
- * of the rounded base, and the combo is flat: neither difficulty nor speed multiplies it. The
- * first correct answer of a run earns no combo.
+ * Points are integers. Base and speed bonus are each `Math.round` of a product of binary
+ * floating-point numbers: the nearest whole point, with a half going up. A product that is a half
+ * on paper can sit just under it in binary and go down: 100 × 1.255 is 125.49999999999999, a base
+ * of 125. The device and the server do the same arithmetic, so they agree. The speed bonus is a
+ * share of the rounded base, and the combo is flat: neither difficulty nor speed multiplies it.
+ * The first correct answer of a run earns no combo.
  */
 export function scoreAnswer(
   input: ScoreInput,

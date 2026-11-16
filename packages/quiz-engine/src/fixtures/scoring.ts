@@ -157,4 +157,22 @@ export const scoringFixtures: readonly ScoringFixture[] = [
       questionCount: 1,
     },
   },
+  // Rounding is Math.round of a binary product, and a product that is a half on paper can sit
+  // just under it. 100 × 1.255, the multiplier of rating 1590, is 125.49999999999999: a base of
+  // 125 and not 126. With 8,600 ms gone of 20 s, 100 × 0.5 × 0.57 is 28.499999999999996: a bonus
+  // of 28 and not 29. Every engine that runs this must agree.
+  {
+    ...base,
+    id: 'scoring/rounding-just-under-half',
+    inputs: [right(1.255, untimed), right(1, after(8_600, 20_000))],
+    expected: {
+      answers: [
+        { base: 125, speedBonus: 0, combo: 0, total: 125, streak: 1 },
+        { base: 100, speedBonus: 28, combo: 10, total: 138, streak: 2 },
+      ],
+      totalPoints: 263,
+      correctCount: 2,
+      questionCount: 2,
+    },
+  },
 ];

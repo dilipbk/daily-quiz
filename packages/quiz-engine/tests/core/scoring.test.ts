@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { runScoringFixtures } from '../../src/core/conformance.ts';
 import { correct, incorrect, invalid, unanswered } from '../../src/core/module.ts';
 import {
   difficultyMultiplier,
@@ -9,6 +10,7 @@ import {
   specScoringConfig,
 } from '../../src/core/scoring.ts';
 import type { ScoreInput, ScoreTiming, ScoringConfig } from '../../src/core/scoring.ts';
+import { scoringFixtures } from '../../src/fixtures/scoring.ts';
 
 const C = specScoringConfig;
 
@@ -347,7 +349,40 @@ describe('scoreAnswer', () => {
     expect(scoreInputSchema.safeParse({ ...input, difficultyMultiplier: 10 }).success).toBe(true);
   });
 
-  it('rounds base and speed bonus half up, takes the bonus from the rounded base, and leaves the combo flat', () => {
+  it('R4: a product that is a half on paper and just under it in binary rounds down', () => {
+    // Rating 1590 is a multiplier of 1.255. 100 × 1.255 is 125.5 on paper and 125.49999999999999
+    // in binary floating point, so the base is 125: on every device, and on the server.
+    const multiplier = difficultyMultiplier(1590, C.difficulty);
+    expect(multiplier).toBe(1.255);
+    expect(100 * multiplier).toBeLessThan(125.5);
+    expect(
+      scoreAnswer({ grade: correct(), difficultyMultiplier: multiplier, timing: untimed }, 0, C)
+        .base,
+    ).toBe(125);
+
+    // 8,600 ms into a limit of 20 s leaves 0.57 of it. 100 × 0.5 × 0.57 is 28.5 on paper and
+    // 28.499999999999996 in binary, so the bonus is 28.
+    const shareLeft = (20_000 - 8_600) / 20_000;
+    expect(100 * 0.5 * shareLeft).toBeLessThan(28.5);
+    expect(
+      scoreAnswer({ grade: correct(), difficultyMultiplier: 1, timing: timed(8_600, 20_000) }, 0, C)
+        .speedBonus,
+    ).toBe(28);
+  });
+
+  it('R4: the shared fixture for a half that binary holds just under scores 125 and 28', () => {
+    const fixture = scoringFixtures.filter(({ id }) => id === 'scoring/rounding-just-under-half');
+
+    expect(fixture.map(({ expected }) => expected.answers)).toEqual([
+      [
+        { base: 125, speedBonus: 0, combo: 0, total: 125, streak: 1 },
+        { base: 100, speedBonus: 28, combo: 10, total: 138, streak: 2 },
+      ],
+    ]);
+    expect(runScoringFixtures(fixture)).toEqual({ ran: 1, failures: [] });
+  });
+
+  it('rounds a half that binary holds exactly up, takes the bonus from the rounded base, and leaves the combo flat', () => {
     // 161 × 0.5 is 80.5, so base is 81. Half of 81 is 40.5, so an instant answer earns 41: a bonus
     // taken from the unrounded 80.5 would be 40. The anchors are widened to take a multiplier of 0.5.
     const config: ScoringConfig = {
