@@ -213,6 +213,14 @@ export const typeAnswerFixtures: readonly GradingFixture[] = [
   ...cases(numberQuestion(['1,000', 'one thousand'], { value: 1000, tolerance: 0 }), [
     ['number-alias-in-words', typed('One Thousand'), correct()],
   ]),
+  // An accepted entry with a number in it that reads as no number: right when typed exactly,
+  // and no typo of it is forgiven, in the number or in the word beside it.
+  ...cases(numberQuestion(['1,500,000', '1.5 million'], { value: 1500000, tolerance: 0 }), [
+    ['alias-with-number', typed('1.5 million'), correct()],
+    ['alias-with-number-separator-dropped', typed('15 million'), incorrect()],
+    ['alias-with-number-other-word', typed('1.5 billion'), incorrect()],
+    ['alias-with-number-typo', typed('1.5 milion'), incorrect()],
+  ]),
   // Text with a digit in it is judged as a number and as nothing else, at any length: a dash
   // that is no minus, a sign left out and a letter that is no listed unit are all wrong.
   ...cases(numberQuestion(['5'], { value: 5, tolerance: 0 }), [

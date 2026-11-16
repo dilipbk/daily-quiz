@@ -433,6 +433,10 @@ describe('type_answer grading', () => {
         'number-exclamation',
         'number-in-brackets',
         'negative-sign-dropped-full-stop',
+        'alias-with-number',
+        'alias-with-number-separator-dropped',
+        'alias-with-number-other-word',
+        'alias-with-number-typo',
       ).failures,
     ).toEqual([]);
   });
@@ -455,7 +459,7 @@ describe('type_answer grading', () => {
     expect(grade('1 thousand')).toBe('incorrect');
   });
 
-  it('on a number question, an alias with a digit in it matches only as the number it reads as', () => {
+  it('on a number question, an accepted entry with a number in it is right when typed exactly, and no typo of it is', () => {
     const question = numberQuestion({
       accepted: ['1,500,000', '1.5 million', '1500000 people'],
       numeric: { value: 1_500_000, tolerance: 0, units: ['people'] },
@@ -464,10 +468,46 @@ describe('type_answer grading', () => {
 
     expect(grade('1.500.000')).toBe('correct');
     expect(grade('1500000 People')).toBe('correct');
-    // "1.5 million" holds a digit and reads as no number, so listing it accepts nothing: write
-    // the unit out ("million" can't be one here) or ask for the answer in millions.
-    expect(grade('1.5 million')).toBe('incorrect');
+    // "1.5 million" reads as no number. The author listed it, and it is typed as listed.
+    expect(grade('1.5 million')).toBe('correct');
+    expect(grade('  1.5   MILLION. ')).toBe('correct');
+    // No typo is forgiven, in the number or beside it, though eleven characters allow two in a
+    // text answer; and the number is compared as typed, separator and sign included.
     expect(grade('15 million')).toBe('incorrect');
+    expect(grade('1.5 billion')).toBe('incorrect');
+    expect(grade('1.5 milion')).toBe('incorrect');
+    expect(grade('1,5 million')).toBe('incorrect');
+    expect(grade('-1.5 million')).toBe('incorrect');
+    expect(grade('1.5 millions')).toBe('incorrect');
+  });
+
+  it('on a number question, an accepted entry that reads as a number is matched as that number only', () => {
+    // Normalization drops brackets, so "(5)" equals the entry "5" as text. The entry is a number,
+    // and "(5)" reads as none: matching text entries exactly opens no way round the number rule.
+    const grade = (value: number, text: string) =>
+      gradeAnswer(
+        mvpRegistry,
+        numberQuestion({
+          accepted: [String(value), '$5', 'five'],
+          numeric: { value, tolerance: 0, units: ['$'] },
+        }),
+        typed(text),
+        context,
+      ).status;
+
+    for (const text of ['5', '$5', 'five', 'FIVE!']) expect(grade(5, text), text).toBe('correct');
+    for (const text of ['(5)', '[5]', '"5"', '($5)', '5 5']) {
+      expect(grade(5, text), text).toBe('incorrect');
+    }
+    expect(grade(-5, '(5)')).toBe('incorrect');
+    // A rejected entry is wrong before any of this is asked.
+    const listedTwice = numberQuestion({
+      accepted: ['12', '12 months'],
+      rejected: ['12 Months'],
+      numeric: { value: 12, tolerance: 0 },
+    });
+    expect(issuePaths(listedTwice)).toEqual([['key', 'rejected', 0]]);
+    expect(gradeAnswer(mvpRegistry, listedTwice, typed('12 months'), context)).toEqual(incorrect());
   });
 
   it('a rejected entry is refused before the number is read', () => {

@@ -281,15 +281,27 @@ function gradeTypedAnswer(
   const rejected = (key.rejected ?? []).map(normalize).filter((entry) => entry !== '');
   if (rejected.includes(input)) return incorrect();
 
-  // On a number question, text with a digit in it is judged as a number and never as text: right
-  // when a reading of it is close enough, and wrong otherwise, whether it reads as another number
-  // ("314" is no typo of "3.14") or as none ("71 km" where no unit is listed). Only text with no
-  // digit, such as "one thousand", goes on to be matched with the accepted entries.
+  // On a number question, text with a digit in it is judged as a number: right when a reading of
+  // it is close enough, and wrong when it reads as another number ("314" is no typo of "3.14")
+  // or as none ("71 km" where no unit is listed). No typo is forgiven on the way.
   if (key.numeric !== undefined) {
     const { numeric } = key;
-    const readings = numberReadingsOf(text, numeric.units ?? []);
+    const units = numeric.units ?? [];
+    const readings = numberReadingsOf(text, units);
     if (readings.some((reading) => isWithinTolerance(reading, numeric))) return correct();
-    if (HAS_DIGIT.test(input)) return incorrect();
+
+    if (HAS_DIGIT.test(input)) {
+      // One exception, so that an entry the author listed accepts at least itself: text that
+      // reads as no number is right when it equals, once normalized, an accepted entry that
+      // reads as none either, such as "1.5 million". An entry that is a number is left to the
+      // rule above, or "(5)" would equal "5" with its brackets normalized away.
+      const isListedAsText =
+        readings.length === 0 &&
+        key.accepted.some(
+          (entry) => normalize(entry) === input && numberReadingsOf(entry, units).length === 0,
+        );
+      return isListedAsText ? correct() : incorrect();
+    }
   }
 
   const accepted = key.accepted.map(normalize).filter((entry) => entry !== '');
