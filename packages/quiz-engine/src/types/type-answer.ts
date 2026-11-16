@@ -99,8 +99,11 @@ const keySchema = z.strictObject({
   accepted: z.array(entrySchema).min(1).max(maxEntries),
   /** Near-misses that are wrong: other real answers one slip away from an accepted one. */
   rejected: z.array(entrySchema).max(maxEntries).optional(),
-  /** Lowers the typos allowed for this question. It can't raise them above the tunables'. */
-  maxTypos: z.int().nonnegative().optional(),
+  /**
+   * Lowers the typos allowed for this question. It can't raise them: grading takes the lower of
+   * this and what the tunables allow, and a value above the hard cap is refused here.
+   */
+  maxTypos: z.int().nonnegative().max(maxTypoEdits).optional(),
   /** Present exactly when the payload's format is 'number'. */
   numeric: numericSchema.optional(),
 });

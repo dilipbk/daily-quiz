@@ -386,6 +386,17 @@ describe('type_answer questions', () => {
     ).toEqual([['key', 'rejected', 0]]);
   });
 
+  it('the schema refuses a maxTypos above the 3 edits that grading honours', () => {
+    const withMaxTypos = (maxTypos: number) =>
+      issuePaths(textQuestion({ accepted: ['Mississippi'], maxTypos }));
+
+    expect(withMaxTypos(0)).toEqual([]);
+    expect(withMaxTypos(3)).toEqual([]);
+    // Grading never allows more than 3, so a larger value would only appear to raise the tolerance.
+    expect(withMaxTypos(4)).toEqual([['key', 'maxTypos']]);
+    expect(withMaxTypos(99)).toEqual([['key', 'maxTypos']]);
+  });
+
   it('a key over its caps is refused for its size alone, before its entries are compared', () => {
     const many = Array.from({ length: 5_000 }, () => '!!!');
 
