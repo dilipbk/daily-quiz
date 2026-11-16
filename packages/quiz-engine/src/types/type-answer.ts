@@ -214,6 +214,8 @@ const NUMBER = /-?[0-9]+(?:[.,][0-9]+)*/g;
  */
 const numbersOf = (text: string): string => (text.match(NUMBER) ?? []).join(' ').replace(/,/g, '.');
 
+const HAS_DIGIT = /[0-9]/;
+
 const codePointLength = (text: string): number => Array.from(text).length;
 
 function gradeTypedAnswer(
@@ -233,15 +235,15 @@ function gradeTypedAnswer(
   const rejected = (key.rejected ?? []).map(normalize).filter((entry) => entry !== '');
   if (rejected.includes(input)) return incorrect();
 
-  // A typed number is judged as a number and never as text: "314" is not a typo of "3.14".
+  // On a number question, text with a digit in it is judged as a number and never as text: right
+  // when a reading of it is close enough, and wrong otherwise, whether it reads as another number
+  // ("314" is no typo of "3.14") or as none ("71 km" where no unit is listed). Only text with no
+  // digit, such as "one thousand", goes on to be matched with the accepted entries.
   if (key.numeric !== undefined) {
     const { numeric } = key;
     const readings = parseNumberReadings(withoutUnit(text, numeric.units ?? []));
-    if (readings.length > 0) {
-      return readings.some((reading) => isWithinTolerance(reading, numeric))
-        ? correct()
-        : incorrect();
-    }
+    if (readings.some((reading) => isWithinTolerance(reading, numeric))) return correct();
+    if (HAS_DIGIT.test(input)) return incorrect();
   }
 
   const accepted = key.accepted.map(normalize).filter((entry) => entry !== '');

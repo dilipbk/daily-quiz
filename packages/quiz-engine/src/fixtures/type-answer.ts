@@ -150,6 +150,28 @@ export const typeAnswerFixtures: readonly GradingFixture[] = [
     ['number-off', typed('1001'), incorrect()],
     ['number-words', typed('one thousand'), incorrect()],
   ]),
+  ...cases(numberQuestion(['1,000', 'one thousand'], { value: 1000, tolerance: 0 }), [
+    ['number-alias-in-words', typed('One Thousand'), correct()],
+  ]),
+  // Text with a digit in it is judged as a number and as nothing else, at any length: a dash
+  // that is no minus, a sign left out and a letter that is no listed unit are all wrong.
+  ...cases(numberQuestion(['5'], { value: 5, tolerance: 0 }), [
+    ['number-after-dash', typed('\u20135'), incorrect()],
+  ]),
+  ...cases(numberQuestion(['-5'], { value: -5, tolerance: 0 }), [
+    ['negative', typed('-5'), correct()],
+    ['negative-minus-sign', typed('\u22125'), correct()],
+    ['negative-sign-dropped', typed('(5)'), incorrect()],
+  ]),
+  ...cases(numberQuestion(['123456789'], { value: 123456789, tolerance: 0 }), [
+    ['number-then-letter', typed('123456789k'), incorrect()],
+    ['unit-unlisted-long', typed('123456789 m'), incorrect()],
+  ]),
+  // Off the tolerance, and one character from the answer as text: "1.234.5" reads as 12345.
+  ...cases(numberQuestion(['1,234.5'], { value: 1234.5, tolerance: 0 }), [
+    ['number-both-separators', typed('1.234,5'), correct()],
+    ['number-separators-alike', typed('1.234.5'), incorrect()],
+  ]),
   ...cases(numberQuestion(['3.14'], { value: 3.14, tolerance: 0.01 }), [
     ['decimal-comma', typed('3,14'), correct()],
     ['tolerance-edge', typed('3.15'), correct()],

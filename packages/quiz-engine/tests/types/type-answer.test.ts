@@ -243,7 +243,75 @@ describe('type_answer grading', () => {
     expect(grade('21 °C')).toBe('incorrect');
   });
 
-  it('on a number question, text with no numeric reading is still matched as text', () => {
+  it('QT-03 a number question judges text with a digit in it as a number, whatever its length', () => {
+    const grade = (value: number, text: string) =>
+      gradeAnswer(
+        mvpRegistry,
+        numberQuestion({ accepted: [String(value)], numeric: { value, tolerance: 0 } }),
+        typed(text),
+        context,
+      ).status;
+
+    // A dash that is no minus sign, typed in front of the number.
+    for (const text of ['\u20135', '\u20145', '--5']) {
+      expect(grade(5, text), text).toBe('incorrect');
+    }
+    // The sign is part of the number, whatever punctuation comes with it.
+    for (const text of ['5', '5.', '5!', '(5)']) {
+      expect(grade(-5, text), text).toBe('incorrect');
+    }
+    for (const text of ['-5', '\u22125', '- 5', '-5,0']) {
+      expect(grade(-5, text), text).toBe('correct');
+    }
+    // Letters and symbols that are no listed unit, on an answer long enough to allow typos.
+    for (const text of ['12345k', '12345%', '1e2345', '$12345', '12345.', '(12345)']) {
+      expect(grade(12345, text), text).toBe('incorrect');
+    }
+    expect(grade(123_456_789, '123456789 m')).toBe('incorrect');
+    expect(grade(123_456_789, '123456789')).toBe('correct');
+  });
+
+  it('QT-03 an unlisted unit is wrong at every key length, and a listed one is read', () => {
+    const grade = (value: number, units: string[] | undefined, text: string) =>
+      gradeAnswer(
+        mvpRegistry,
+        numberQuestion({
+          accepted: [String(value)],
+          numeric: { value, tolerance: 0, ...(units === undefined ? {} : { units }) },
+        }),
+        typed(text),
+        context,
+      ).status;
+
+    // One character after the number, then two: within the typos a longer answer is allowed.
+    for (const value of [7, 71, 71_000, 71_000_000, 123_456_789]) {
+      for (const text of [`${String(value)}m`, `${String(value)} m`]) {
+        expect(grade(value, undefined, text), text).toBe('incorrect');
+        expect(grade(value, ['%', 'km'], text), text).toBe('incorrect');
+        expect(grade(value, ['m'], text), text).toBe('correct');
+      }
+    }
+    expect(grade(71, undefined, '71 km')).toBe('incorrect');
+    expect(grade(71, ['km'], '71 km')).toBe('correct');
+  });
+
+  it('QT-03 the shared fixtures for a number question and text that is no number', () => {
+    expect(
+      runFixtures(
+        'number-after-dash',
+        'negative',
+        'negative-minus-sign',
+        'negative-sign-dropped',
+        'number-then-letter',
+        'unit-unlisted-long',
+        'number-both-separators',
+        'number-separators-alike',
+        'number-alias-in-words',
+      ).failures,
+    ).toEqual([]);
+  });
+
+  it('on a number question, an alias with no digit in it is still matched as text', () => {
     const question = numberQuestion({
       accepted: ['1,000', 'one thousand', 'a thousand'],
       numeric: { value: 1000, tolerance: 0 },
@@ -257,6 +325,23 @@ describe('type_answer grading', () => {
     // A number is judged as a number: one edit from "1,000" as text, and wrong.
     expect(grade('1,001')).toBe('incorrect');
     expect(grade('1,00')).toBe('incorrect');
+    // So is a number with a word: one edit from "a thousand" as text, and no number at all.
+    expect(grade('1 thousand')).toBe('incorrect');
+  });
+
+  it('on a number question, an alias with a digit in it matches only as the number it reads as', () => {
+    const question = numberQuestion({
+      accepted: ['1,500,000', '1.5 million', '1500000 people'],
+      numeric: { value: 1_500_000, tolerance: 0, units: ['people'] },
+    });
+    const grade = (text: string) => gradeAnswer(mvpRegistry, question, typed(text), context).status;
+
+    expect(grade('1.500.000')).toBe('correct');
+    expect(grade('1500000 People')).toBe('correct');
+    // "1.5 million" holds a digit and reads as no number, so listing it accepts nothing: write
+    // the unit out ("million" can't be one here) or ask for the answer in millions.
+    expect(grade('1.5 million')).toBe('incorrect');
+    expect(grade('15 million')).toBe('incorrect');
   });
 
   it('a rejected entry is refused before the number is read', () => {
