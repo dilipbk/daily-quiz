@@ -142,7 +142,7 @@ describe('gradeAnswer', () => {
 });
 
 describe('toPlayerQuestion', () => {
-  it('toPlayerQuestion drops the key and nothing else', () => {
+  it('toPlayerQuestion keeps the type and the payload, and leaves the question as it was', () => {
     const before = JSON.stringify(wordQuestion);
     const playerQuestion = toPlayerQuestion(wordQuestion);
 
@@ -153,12 +153,25 @@ describe('toPlayerQuestion', () => {
     expect(playerQuestion).not.toHaveProperty('key');
     expect(toyRegistry.playerQuestionSchema.safeParse(playerQuestion).success).toBe(true);
     expect(JSON.stringify(wordQuestion)).toBe(before);
+  });
 
-    expect(toPlayerQuestion({ ...flagQuestion, id: 'q_1' })).toEqual({
-      type: 'toy_flag',
-      payload: {},
+  it('toPlayerQuestion passes on no other field of the object it is given', () => {
+    // A stored question carries more than the engine's three fields, and some of it gives the
+    // answer away. Nothing is passed on for being unknown.
+    const stored = {
+      ...flagQuestion,
       id: 'q_1',
-    });
+      explanation: 'True: the flag has flown there since 1969.',
+      answerKey: { value: true },
+      rating: 1540,
+    };
+    const playerQuestion = toPlayerQuestion(stored);
+
+    expect(Object.keys(playerQuestion).sort()).toEqual(['payload', 'type']);
+    expect(playerQuestion).toEqual({ type: 'toy_flag', payload: {} });
+    expect(toyRegistry.playerQuestionSchema.safeParse(playerQuestion).success).toBe(true);
+    expectTypeOf(playerQuestion).not.toHaveProperty('explanation');
+    expectTypeOf(playerQuestion).not.toHaveProperty('key');
   });
 
   it('keeps a union of questions a union', () => {

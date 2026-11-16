@@ -52,13 +52,19 @@ export function gradeAnswer<M extends readonly AnyQuestionTypeModule[]>(
   });
 }
 
-/** `Omit` that keeps a union of questions a union: one member per type, each without its key. */
-type WithoutKey<Q> = Q extends unknown ? Omit<Q, 'key'> : never;
+/** The type and payload of a question, and no other field. A union of questions stays a union. */
+type PlayerForm<Q> = Q extends { readonly type: infer TType; readonly payload: infer TPayload }
+  ? { readonly type: TType; readonly payload: TPayload }
+  : never;
 
-/** What may be sent to a player before they answer. Copies; the question is left as it was. */
+/**
+ * What may be sent to a player before they answer: the type and the payload, the two fields the
+ * schemas call safe to show. It is built from those two and not by removing the key, so whatever
+ * else the object carries (an explanation, a rating, a second copy of the answer) stays behind.
+ * A new object; the question is left as it was.
+ */
 export function toPlayerQuestion<
   Q extends { readonly type: string; readonly payload: unknown; readonly key: unknown },
->(question: Q): WithoutKey<Q> {
-  const kept = Object.entries(question).filter(([name]) => name !== 'key');
-  return Object.fromEntries(kept) as WithoutKey<Q>;
+>(question: Q): PlayerForm<Q> {
+  return { type: question.type, payload: question.payload } as PlayerForm<Q>;
 }
