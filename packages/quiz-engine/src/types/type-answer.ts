@@ -18,11 +18,11 @@ import { parseNumberReadings } from '../text/number.ts';
 /** The longest typed answer, in UTF-16 units: the size the text has in memory. */
 export const maxResponseLength = 256;
 /** The longest accepted or rejected entry, or unit, in characters. */
-export const maxEntryLength = 120;
+const maxEntryLength = 120;
 /** The most accepted entries, rejected entries or units one key holds. */
-export const maxEntries = 20;
+const maxEntries = 20;
 /** The most typos any config or question can allow. */
-export const maxTypoEdits = 3;
+const maxTypoEdits = 3;
 
 // Tunables
 

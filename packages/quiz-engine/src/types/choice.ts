@@ -7,7 +7,7 @@ import type { Grade, QuestionIssue } from '../core/module.ts';
 // entries, the rules a sound list keeps, and how a pick is graded.
 
 /** The longest id, in characters. A hard cap, not a tunable: it bounds what a response carries. */
-export const maxIdLength = 32;
+const maxIdLength = 32;
 
 /** The id of an option or an item, unique within its question. */
 export const optionIdSchema = z.string().min(1).max(maxIdLength);

@@ -1,5 +1,6 @@
 import fc from 'fast-check';
 import { image, text } from '../../src/fixtures/content.ts';
+import { normalizeAnswerText } from '../../src/text/normalize.ts';
 import { imageChoice } from '../../src/types/image-choice.ts';
 import { ordering } from '../../src/types/ordering.ts';
 import { singleChoice } from '../../src/types/single-choice.ts';
@@ -135,12 +136,8 @@ const answerEntry = fc
   )
   .map(([words, joint, ending]) => `${words.join(joint)}${ending}`);
 
-/** What the question schema compares to tell accepted from rejected: close enough for these words. */
-const compared = (entry: string): string =>
-  entry
-    .normalize('NFKD')
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
+/** Text as the question schema compares it, to keep a rejected entry apart from every accepted one. */
+const compared = (entry: string): string => normalizeAnswerText(entry, '', {});
 
 const textAnswerQuestion = fc
   .record({
