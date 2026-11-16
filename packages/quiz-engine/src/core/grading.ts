@@ -24,6 +24,9 @@ const answerEnvelopeSchema = z.strictObject({ type: z.string(), response: z.unkn
 /**
  * Never throws for a question the registry's schema accepts. `answer` is untrusted: it is whatever
  * the player's device sent, and anything that isn't an answer to this question grades `invalid`.
+ *
+ * `context.tunables` must have passed the registry's `tunablesSchema`. They are not parsed again
+ * on each call, and with tunables that would fail that schema a grader throws a `TypeError`.
  */
 export function gradeAnswer<M extends readonly AnyQuestionTypeModule[]>(
   registry: Registry<M>,

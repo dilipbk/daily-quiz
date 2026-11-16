@@ -517,6 +517,33 @@ describe('type_answer and hostile input', () => {
   });
 });
 
+describe('type_answer and tunables that skipped their schema', () => {
+  it("gradeAnswer requires tunables that passed the registry's tunablesSchema: with others a grader throws a TypeError", () => {
+    const paris = textQuestion({ accepted: ['Paris'] });
+    const unparsed: unknown[] = [
+      undefined,
+      null,
+      {},
+      { type_answer: null },
+      { type_answer: {} },
+      { type_answer: { articles: {} } },
+      { type_answer: { typoThresholds: [] } },
+    ];
+
+    for (const tunables of unparsed) {
+      expect(mvpRegistry.tunablesSchema.safeParse(tunables).success).toBe(false);
+      expect(
+        () =>
+          gradeAnswer(mvpRegistry, paris, typed('Pariz'), {
+            locale: 'en',
+            tunables: tunables as typeof specMvpTunables,
+          }),
+        JSON.stringify(tunables),
+      ).toThrow(TypeError);
+    }
+  });
+});
+
 describe('type_answer questions', () => {
   it('accepts a text key and a number key', () => {
     expect(issuePaths(textQuestion({ accepted: ['Paris'] }))).toEqual([]);
