@@ -65,10 +65,12 @@ function beginsNumber(text: string, offset: number): boolean {
 const foldCase = (text: string): string =>
   text.toLowerCase().toUpperCase().toLowerCase().replace(/ς/g, 'σ');
 
-/** Steps 1 to 4: compatibility forms, case, diacritics and the letters that don't decompose. */
+/**
+ * Steps 1 to 4: compatibility forms, case, diacritics and the letters that don't decompose. The
+ * text is decomposed once: folding case puts no composed character back and moves no mark.
+ */
 const foldLetters = (text: string): string =>
   foldCase(text.normalize('NFKD'))
-    .normalize('NFKD')
     .replace(COMBINING_MARKS, '')
     .replace(FOLDED_LETTERS, (letter) => letterFolds[letter] ?? letter);
 
