@@ -1041,24 +1041,24 @@ The grader, in order. `n(x)` is `normalizeAnswerText(x, locale, tunables.article
 
 **Interfaces:** Consumes everything. Produces no source code: if a proof fails, the fix belongs to the task that owns the code.
 
-- [ ] **Step 1: `tests/purity.test.ts`.**
+- [x] **Step 1: `tests/purity.test.ts`.**
   - `graders are pure: the shared fixtures pass with the clock, randomness and locale APIs booby-trapped`: inside the test body, replace `Date.now`, `Math.random`, `String.prototype.toLocaleLowerCase`, `String.prototype.toLocaleUpperCase`, `String.prototype.localeCompare`, `Number.prototype.toLocaleString` with functions that throw, and `globalThis.Intl` with a proxy that throws on any access; call `runSharedFixtures()`; restore everything in `finally`; expect no failures.
   - `evaluating the same completion twice gives deep-equal results (duplicate and retry)`: a session of one fixture per type, evaluated twice.
   - `interleaving two sessions changes neither result (no shared state)`: grade session A's and B's items alternately and compare with grading each alone.
-- [ ] **Step 2: `tests/support/multi-select.ts` and `tests/sixth-type.test.ts`.** The module is `multi_select` (the first V1 type in §7.4): payload `{ options }` of 2–6 `{ id, content }`; key `{ correctOptionIds }`; response `{ optionIds }`; `check` requires known, distinct ids and at least one correct; `grade` is correct when the two id sets are equal, invalid `malformed` for an unknown or repeated id, otherwise incorrect. It imports only the package's public API. The test, `a sixth type validates, grades, scores and passes the generic properties with src/core unchanged`, builds `createRegistry([...mvpQuestionTypes, multiSelect])` and asserts:
+- [x] **Step 2: `tests/support/multi-select.ts` and `tests/sixth-type.test.ts`.** The module is `multi_select` (the first V1 type in §7.4): payload `{ options }` of 2–6 `{ id, content }`; key `{ correctOptionIds }`; response `{ optionIds }`; `check` requires known, distinct ids and at least one correct; `grade` is correct when the two id sets are equal, invalid `malformed` for an unknown or repeated id, otherwise incorrect. It imports only the package's public API. The test, `a sixth type validates, grades, scores and passes the generic properties with src/core unchanged`, builds `createRegistry([...mvpQuestionTypes, multiSelect])` and asserts:
   1. `types` has six entries, and `expectTypeOf` shows the question union's `type` is `QuestionType | 'multi_select'`;
   2. `questionSchema` parses a sound `multi_select` question and refuses one whose key names an unknown option; `playerQuestionSchema` refuses it with a key;
   3. `gradeAnswer` returns correct, incorrect, and `type_mismatch` for a `single_choice` answer;
   4. `evaluateSession` over one `single_choice` and one `multi_select` item, both correct, multiplier 1, untimed, totals 210;
   5. `runGradingFixtures` passes three `multi_select` fixtures written in the test;
   6. `describeRegistryProperties` passes with a `multi_select` kit added to `mvpKits`.
-- [ ] **Step 3: `tests/node/boundaries.test.ts`** (reads files with `node:fs`):
+- [x] **Step 3: `tests/node/boundaries.test.ts`** (reads files with `node:fs`):
   - `src/core names no question type and imports nothing from types, text or fixtures`: no file under `src/core` contains any id in `mvpRegistry.types`, nor an import specifier containing `/types/`, `/text/`, `/fixtures/` or `@repo/content-blocks`.
   - `src uses only syntax every target engine runs`: no file under `src` contains `\p{`, `\P{`, `(?<` or `Intl.`.
   - `only src/types/content.ts and src/fixtures/content.ts import @repo/content-blocks`.
   - `the fixtures entry point imports no test runner`: nothing under `src` imports `vitest` or `fast-check`.
   - `the package depends on zod and @repo/content-blocks only, at content-blocks' zod range`: read from the two `package.json` files.
-- [ ] **Step 4: Run everything.** `pnpm exec vitest run packages/quiz-engine` then `pnpm verify` · Expected: green. Break each proof once by hand to see it fail (name a type in `src/core`, call `Date.now()` in a grader, add `\p{L}` to a regex), then revert.
+- [x] **Step 4: Run everything.** `pnpm exec vitest run packages/quiz-engine` then `pnpm verify` · Expected: green. Break each proof once by hand to see it fail (name a type in `src/core`, call `Date.now()` in a grader, add `\p{L}` to a regex), then revert.
 - [ ] **Step 5: Write the ADRs** from `docs/adr/0000-template.md`, at the next free numbers, status `Proposed`:
   - _Question types are modules in a registry; the engine core names no type._ Decision, the alternatives (a `switch` on type in the grader; one class per type; config captured when a module is built), and the consequence for FE-04 (a renderer map keyed by `QuestionType`).
   - _Grading and scoring readings._ R1–R11 as ruled, the locale-free normalization and number parsing, the portable-syntax rule, and using fast-check without its Vitest connector.

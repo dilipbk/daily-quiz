@@ -9,7 +9,7 @@ import type { TimeClass } from './module.ts';
 export interface TimingConfig {
   /** For types where the player picks an answer. */
   readonly choiceMs: number;
-  /** For types where the player constructs one: typing, ordering. */
+  /** For types where the player constructs one: typing it, or putting items in order. */
   readonly constructedMs: number;
   /** Added when the question contains media or math. */
   readonly mediaBonusMs: number;
