@@ -58,6 +58,12 @@ export const orderingFixtures: readonly GradingFixture[] = [
   },
   {
     ...base,
+    id: 'ordering/extra-item',
+    answer: arrange('mercury', 'venus', 'earth', 'mars', 'pluto'),
+    expected: invalid('malformed'),
+  },
+  {
+    ...base,
     id: 'ordering/repeated-item',
     answer: arrange('mercury', 'mercury', 'earth', 'mars'),
     expected: invalid('malformed'),
