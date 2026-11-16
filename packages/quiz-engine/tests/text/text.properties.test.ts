@@ -12,12 +12,24 @@ const answerAlphabet = Array.from(
   "aAtThHeElL  ..,,''--__//19ßsSΣσςİıiIéÉøØþ\u0301\u0307\u0345\u00ad\u200b\u00a0…·()!?+#",
 );
 
+// A Greek iota subscript, then a Cyrillic mark that normalization keeps: the one shape of text
+// whose upper case, taken before the text is in canonical form, is a different text.
+const iotaSubscriptThenTitlo = String.fromCodePoint(0x3b1, 0x345, 0x483);
+
 /** Any text a player could send: graphemes, any code points, lone surrogates, answer-like strings. */
 const anyText = fc.oneof(
   fc.string({ unit: 'grapheme' }),
   fc.string({ unit: 'binary' }),
   fc.string({ unit: fc.constantFrom(...answerAlphabet), maxLength: 12 }),
-  fc.constantFrom('\uD800', 'a\uDFFFb', 'The The The', 'ΑΣ(Α', '1.,2', '3\u200b.14'),
+  fc.constantFrom(
+    '\uD800',
+    'a\uDFFFb',
+    'The The The',
+    'ΑΣ(Α',
+    '1.,2',
+    iotaSubscriptThenTitlo,
+    '3\u200b.14',
+  ),
 );
 
 describe('normalizeAnswerText properties', () => {
@@ -39,8 +51,12 @@ describe('normalizeAnswerText properties', () => {
     fc.assert(
       fc.property(anyText, locale, (text, questionLocale) => {
         const expected = normalize(text, questionLocale);
+        // Upper-cased from its canonical form. Upper-casing turns an iota subscript into a letter
+        // where it stands, so on text in another order a mark after it lands on that letter: a
+        // different text, by Unicode's own rules, and not one a keyboard produces.
+        const upperCased = text.normalize('NFD').toUpperCase();
 
-        expect(normalize(text.toUpperCase(), questionLocale)).toBe(expected);
+        expect(normalize(upperCased, questionLocale)).toBe(expected);
         expect(normalize(text.toLowerCase(), questionLocale)).toBe(expected);
       }),
       { numRuns: 2000 },

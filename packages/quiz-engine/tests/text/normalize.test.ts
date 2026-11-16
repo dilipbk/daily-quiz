@@ -28,6 +28,19 @@ describe('normalizeAnswerText', () => {
     expect(normalize('ΟΔΟΣ!')).toBe(normalize('οδοσ'));
   });
 
+  it('QT-03 case: capitals typed for an iota subscript compare equal to it', () => {
+    const subscript = String.fromCodePoint(0x1fb3); // alpha with an iota subscript
+    const titlo = String.fromCodePoint(0x483); // a Cyrillic mark, which normalization keeps
+
+    expect(normalize('ΑΙ')).toBe(normalize(subscript));
+    expect(normalize(subscript.toUpperCase())).toBe(normalize(subscript));
+    // The limit, stated: with a kept mark after the subscript, upper-casing the text as stored
+    // moves the mark onto the new letter. From the canonical form it stays where it was.
+    const marked = `${subscript}${titlo}`;
+    expect(normalize(marked.normalize('NFD').toUpperCase())).toBe(normalize(marked));
+    expect(normalize(marked.toUpperCase())).not.toBe(normalize(marked));
+  });
+
   it('QT-03 diacritics', () => {
     expect(normalize('París')).toBe('paris');
     expect(normalize('Malmö')).toBe('malmo');
