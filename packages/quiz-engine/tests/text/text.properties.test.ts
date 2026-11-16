@@ -9,7 +9,7 @@ const locale = fc.constantFrom('en', 'en-GB', 'es', 'es-MX', 'hi', '');
 
 /** Characters the steps of normalization treat differently, so that short strings exercise them. */
 const answerAlphabet = Array.from(
-  "aAtThHeElL  ..,,''--__//19ßsSΣσςİıiIéÉøØþ\u0301\u0307\u0345\u00ad\u200b\u00a0…·()!?+#",
+  "aAtThHeElL  ..,,''--\u2013\u2212__//19ßsSΣσςİıiIéÉøØþ\u0301\u0307\u0345\u00ad\u200b\u00a0…·()!?+#",
 );
 
 // A Greek iota subscript, then a Cyrillic mark that normalization keeps: the one shape of text

@@ -9,8 +9,8 @@ import { parseNumberReadings } from '../text/number.ts';
 // A typed answer (spec §7.4, QT-03): compared after normalization with every accepted alias, read
 // as a number where the key holds one, and forgiven a typo or two where the answer is long enough
 // to tell a slip from another answer. A wrong fact costs more than a missing quiz, so each
-// leniency has a stop: short answers get no typos, digits must match, and a near-miss the author
-// listed is wrong however it is reached.
+// leniency has a stop: short answers get no typos, a number must match in its digits, its
+// separator and its sign, and a near-miss the author listed is wrong however it is reached.
 
 // Hard caps. They bound the work one answer can cause on the completion endpoint, where the
 // text comes from the player's device, so they are constants and not tunables.
@@ -204,7 +204,15 @@ function allowedTypos(
   return Math.min(allowed, maxTypos ?? maxTypoEdits, maxTypoEdits);
 }
 
-const digitsOf = (text: string): string => text.replace(/[^0-9]/g, '');
+// One pass, with nothing optional inside the repetition. In normalized text a dot or comma stands
+// only between two digits and a minus only in front of one, so this finds every digit.
+const NUMBER = /-?[0-9]+(?:[.,][0-9]+)*/g;
+
+/**
+ * The numbers in a normalized text, in order: each with its digits, the separators inside it
+ * and its sign. A comma and a point stand for each other, so "12,5" is the number "12.5" is.
+ */
+const numbersOf = (text: string): string => (text.match(NUMBER) ?? []).join(' ').replace(/,/g, '.');
 
 const codePointLength = (text: string): number => Array.from(text).length;
 
@@ -239,13 +247,13 @@ function gradeTypedAnswer(
   const accepted = key.accepted.map(normalize).filter((entry) => entry !== '');
   if (accepted.includes(input)) return correct();
 
-  // A typo: within the edits its length allows, with every digit as in the answer, and strictly
+  // A typo: within the edits its length allows, with every number as in the answer, and strictly
   // closer to the answer than to anything rejected. Each distance is cut off at a few edits, so
   // its work is bounded by the lengths the schemas cap.
-  const inputDigits = digitsOf(input);
+  const inputNumbers = numbersOf(input);
   const isTypoOf = (entry: string): boolean => {
     const allowed = allowedTypos(codePointLength(entry), tunables.typoThresholds, key.maxTypos);
-    if (!(allowed > 0) || digitsOf(entry) !== inputDigits) return false;
+    if (!(allowed > 0) || numbersOf(entry) !== inputNumbers) return false;
 
     const distance = editDistance(input, entry, allowed);
     return (

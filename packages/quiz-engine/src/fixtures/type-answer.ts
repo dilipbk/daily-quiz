@@ -107,6 +107,22 @@ export const typeAnswerFixtures: readonly GradingFixture[] = [
     ['digits-differ', typed('Apollo 12'), incorrect()],
     ['digits-same', typed('Apolo 11'), correct()],
   ]),
+  // Nor inside a number in any other way: the separator in it and its sign are part of it.
+  ...cases(textQuestion(['1.5 million']), [
+    ['number-separator-dropped', typed('15 million'), incorrect()],
+    ['number-separator-moved', typed('.15 million'), incorrect()],
+    // A decimal comma is the same number, and a slip beside a number is still a slip.
+    ['number-decimal-comma', typed('1,5 million'), correct()],
+    ['number-typo-beside', typed('1.5 milion'), correct()],
+  ]),
+  // A minus that begins a number is kept, whichever dash is typed for it. A hyphen that begins
+  // none only joins words.
+  ...cases(textQuestion(['-40 degrees']), [
+    ['minus-dropped', typed('40 degrees'), incorrect()],
+    ['minus-sign-for-hyphen', typed('\u221240 degrees'), correct()],
+  ]),
+  ...cases(textQuestion(['Apollo-11']), [['hyphen-before-number', typed('Apollo 11'), correct()]]),
+  ...cases(textQuestion(['Jean-Paul']), [['hyphen-between-words', typed('Jean Paul'), correct()]]),
   // A near-miss the author listed: wrong when typed exactly, and wrong when a slip is as close
   // to it as to the answer.
   ...cases(textQuestion(['Australia'], { rejected: ['Austria'] }), [

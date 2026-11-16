@@ -26,8 +26,12 @@ const letterFolds: Readonly<Record<string, string>> = Object.freeze({
 });
 const FOLDED_LETTERS = new RegExp(`[${Object.keys(letterFolds).join('')}]`, 'g');
 
-// Hyphens, dashes, the underscore and both slashes join words, so they separate them here.
-const SEPARATORS = /[-\u2010-\u2015_/\\]/g;
+// The underscore and both slashes join words, so they separate them here.
+const WORD_JOINERS = /[_/\\]/g;
+
+// Hyphens, dashes and the minus sign. One separates words too, unless it begins a number.
+const DASHES = /[-\u2010-\u2015\u2212]/g;
+const isDash = (character: string): boolean => /^[-\u2010-\u2015\u2212]$/.test(character);
 
 // Punctuation and quotation marks that carry no part of an answer, and characters that can't be
 // seen: the soft hyphen, zero-width spaces and joiners, direction marks, the word joiner and the
@@ -39,6 +43,19 @@ const DOT_OR_COMMA = /[.,]/g;
 
 const isAsciiDigit = (character: string | undefined): boolean =>
   character !== undefined && character >= '0' && character <= '9';
+
+/**
+ * Whether the dash at `offset` is the sign of a number: a digit follows it, and nothing, a space
+ * or another dash comes before it. "-40" keeps its minus, and "Apollo-11" and "1939-1945" don't
+ * gain one. It is asked once everything that gets removed is gone, so the answer is the same
+ * when the text is normalized again.
+ */
+function beginsNumber(text: string, offset: number): boolean {
+  const before = text[offset - 1];
+  return (
+    isAsciiDigit(text[offset + 1]) && (before === undefined || /\s/.test(before) || isDash(before))
+  );
+}
 
 /**
  * Lower case with no locale. Lower, upper, lower folds "ß" with "SS" and "İ" with "i". Lower-casing
@@ -71,11 +88,15 @@ export function normalizeAnswerText(
   articles: ArticlesByLanguage,
 ): string {
   const words = foldLetters(text)
-    .replace(SEPARATORS, ' ')
+    .replace(WORD_JOINERS, ' ')
     .replace(IGNORED, '')
     // A dot or comma is part of the answer only inside a number: "3.14" must not become "314".
     .replace(DOT_OR_COMMA, (mark, offset: number, whole: string) =>
       isAsciiDigit(whole[offset - 1]) && isAsciiDigit(whole[offset + 1]) ? mark : '',
+    )
+    // A minus is part of the answer only in front of a number: "-40" must not become "40".
+    .replace(DASHES, (_dash, offset: number, whole: string) =>
+      beginsNumber(whole, offset) ? '-' : ' ',
     )
     .replace(/\s+/g, ' ')
     .trim();

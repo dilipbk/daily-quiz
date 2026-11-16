@@ -114,6 +114,32 @@ describe('normalizeAnswerText', () => {
     expect(normalize('3\u200b.14')).toBe('3.14');
   });
 
+  it('QT-03 punctuation: a minus that begins a number is kept, whichever dash is typed for it', () => {
+    expect(normalize('-40 degrees')).toBe('-40 degrees');
+    expect(normalize('\u221240 degrees')).toBe('-40 degrees');
+    expect(normalize('\u201340')).toBe('-40');
+    expect(normalize('\u201440')).toBe('-40');
+    expect(normalize('(-5)')).toBe('-5');
+    expect(normalize('--5')).toBe('-5');
+    expect(normalize('below -5')).toBe('below -5');
+    expect(normalize(normalize('below --5'))).toBe('below -5');
+  });
+
+  it('QT-03 punctuation: a dash that begins no number separates words, as a hyphen does', () => {
+    // After a letter or a digit, and before anything but a digit.
+    expect(normalize('Apollo-11')).toBe('apollo 11');
+    expect(normalize('Catch\u201322')).toBe('catch 22');
+    expect(normalize('1939-1945')).toBe('1939 1945');
+    expect(normalize('Jean\u2212Paul')).toBe('jean paul');
+    expect(normalize('- 40')).toBe('40');
+    expect(normalize('40-')).toBe('40');
+    expect(normalize('-forty')).toBe('forty');
+    expect(normalize('-')).toBe('');
+    // What is left around the dash decides, so a second pass changes nothing.
+    expect(normalize("b'-5")).toBe('b 5');
+    expect(normalize('b.-5')).toBe('b 5');
+  });
+
   it("QT-03 leading articles follow the question's locale", () => {
     expect(normalize('The Beatles')).toBe('beatles');
     expect(normalize('An Apple')).toBe('apple');

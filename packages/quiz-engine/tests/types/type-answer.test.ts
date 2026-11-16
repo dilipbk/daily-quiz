@@ -126,6 +126,53 @@ describe('type_answer grading', () => {
     expect(grade('The Who.', 'Whu')).toBe('incorrect');
   });
 
+  it('R6: no typo is forgiven inside a number: its digits, the separator in it and its sign', () => {
+    const grade = (accepted: string, text: string) =>
+      gradeAnswer(mvpRegistry, textQuestion({ accepted: [accepted] }), typed(text), context).status;
+
+    expect(grade('1.5 million', '15 million')).toBe('incorrect');
+    expect(grade('12.5 percent', '125 percent')).toBe('incorrect');
+    expect(grade('12.5 percent', '1.25 percent')).toBe('incorrect');
+    expect(grade('3.14159', '314159')).toBe('incorrect');
+    expect(grade('Area 51', 'Area 5 1')).toBe('incorrect');
+    // No typo at all: the minus was dropped as punctuation.
+    expect(grade('-40 degrees', '40 degrees')).toBe('incorrect');
+    expect(grade('40 degrees', '-40 degrees')).toBe('incorrect');
+    expect(grade('40 degrees', '\u201340 degrees')).toBe('incorrect');
+
+    // The same number: a minus sign for the hyphen, a decimal comma for the point.
+    expect(grade('-40 degrees', '\u221240 degrees')).toBe('correct');
+    expect(grade('-40 degrees', '-40 degres')).toBe('correct');
+    expect(grade('12.5 percent', '12,5 percent')).toBe('correct');
+    expect(grade('1.5 million', '1.5 milion')).toBe('correct');
+    // A hyphen that begins no number still only joins words.
+    expect(grade('Apollo-11', 'Apollo 11')).toBe('correct');
+    expect(grade('Apollo 11', 'Apollo11')).toBe('correct');
+    expect(grade('Jean-Paul', 'Jean Paul')).toBe('correct');
+
+    // The same stop where a number question lists an alias with a number in it.
+    const population = numberQuestion({
+      accepted: ['1,500,000', '1.5 million'],
+      numeric: { value: 1_500_000, tolerance: 0 },
+    });
+    expect(gradeAnswer(mvpRegistry, population, typed('15 million'), context)).toEqual(incorrect());
+  });
+
+  it('R6: the shared fixtures for numbers inside a text answer', () => {
+    expect(
+      runFixtures(
+        'number-separator-dropped',
+        'number-separator-moved',
+        'number-decimal-comma',
+        'number-typo-beside',
+        'minus-dropped',
+        'minus-sign-for-hyphen',
+        'hyphen-before-number',
+        'hyphen-between-words',
+      ).failures,
+    ).toEqual([]);
+  });
+
   it('QT-03 typo thresholds are tunable', () => {
     const paris = textQuestion({ accepted: ['Paris'] });
     const iran = textQuestion({ accepted: ['Iran'] });
@@ -523,6 +570,44 @@ describe('type_answer properties', () => {
             tunables: specMvpTunables,
           }),
         ).toEqual(correct());
+      }),
+      { numRuns: 500 },
+    );
+  });
+
+  it("a typo is never forgiven across a number's separator or sign", () => {
+    const cases = fc
+      .record({
+        before: fc.array(answerWord, { maxLength: 2 }),
+        whole: fc.stringMatching(/^[1-9][0-9]{1,3}$/),
+        fraction: fc.stringMatching(/^[0-9]{1,2}$/),
+        after: fc.array(answerWord, { minLength: 1, maxLength: 2 }),
+        change: fc.constantFrom('drop the separator', 'move the separator', 'add a minus'),
+        locale: questionLocale,
+      })
+      .map(({ before, whole, fraction, after, change, locale }) => {
+        const number = `${whole}.${fraction}`;
+        const changed = {
+          'drop the separator': `${whole}${fraction}`,
+          'move the separator': `${whole.slice(0, -1)}.${whole.slice(-1)}${fraction}`,
+          'add a minus': `-${number}`,
+        }[change];
+        // The number comes first or after a space, so a minus in front of it begins it.
+        const around = (middle: string) => [...before, middle, ...after].join(' ');
+
+        return { accepted: around(number), text: around(changed), locale };
+      });
+
+    fc.assert(
+      fc.property(cases, ({ accepted, text, locale }) => {
+        const grade = (key: string, answer: string) =>
+          gradeAnswer(mvpRegistry, textQuestion({ accepted: [key] }), typed(answer), {
+            locale,
+            tunables: specMvpTunables,
+          });
+
+        expect(grade(accepted, text)).toEqual(incorrect());
+        expect(grade(text, accepted)).toEqual(incorrect());
       }),
       { numRuns: 500 },
     );
