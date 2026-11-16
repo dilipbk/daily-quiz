@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { TimeClass } from '../../src/core/module.ts';
 import { specTimingConfig, standardLimitMs, timingConfigSchema } from '../../src/core/timing.ts';
 
 describe('standardLimitMs', () => {
@@ -16,6 +17,30 @@ describe('standardLimitMs', () => {
     expect(standardLimitMs('constructed', false, config)).toBe(2);
     expect(standardLimitMs('choice', true, config)).toBe(5);
     expect(standardLimitMs('constructed', true, config)).toBe(6);
+  });
+
+  it('refuses a time class that is not one of its own, a name every object inherits included', () => {
+    const others = [
+      'constructor',
+      'toString',
+      'hasOwnProperty',
+      '__proto__',
+      'Choice',
+      'media',
+      '',
+    ];
+
+    for (const name of others) {
+      for (const hasMediaOrMath of [false, true]) {
+        expect(
+          () => standardLimitMs(name as TimeClass, hasMediaOrMath, specTimingConfig),
+          name,
+        ).toThrow(RangeError);
+      }
+    }
+    expect(() =>
+      standardLimitMs(undefined as unknown as TimeClass, false, specTimingConfig),
+    ).toThrow(RangeError);
   });
 
   it('§10.3 the spec values exist once, as data that passes its own schema', () => {

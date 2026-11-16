@@ -31,6 +31,10 @@ export const specTimingConfig: TimingConfig = Object.freeze({
   mediaBonusMs: 10_000,
 });
 
+/**
+ * Throws a `RangeError` for a time class that isn't one of the two. A module that skipped the
+ * type checker gets no limit made of whatever an object happens to inherit under that name.
+ */
 export function standardLimitMs(
   timeClass: TimeClass,
   hasMediaOrMath: boolean,
@@ -40,5 +44,8 @@ export function standardLimitMs(
     choice: config.choiceMs,
     constructed: config.constructedMs,
   };
+  if (!Object.prototype.hasOwnProperty.call(limits, timeClass)) {
+    throw new RangeError(`A time class is "choice" or "constructed"; received ${timeClass}.`);
+  }
   return limits[timeClass] + (hasMediaOrMath ? config.mediaBonusMs : 0);
 }
