@@ -237,6 +237,28 @@ describe('type_answer grading', () => {
     expect(grade(3, 'Misisipi')).toBe('incorrect');
   });
 
+  it('R6: grading stops at 3 typos, whatever the tunables and the question allow', () => {
+    // Values neither schema would pass: grading holds the cap itself and doesn't lean on them.
+    const lenient = withTunables({ typoThresholds: [{ minLength: 5, maxEdits: 9 }] });
+    const grade = (key: { maxTypos?: number }, text: string) =>
+      gradeAnswer(
+        mvpRegistry,
+        textQuestion({ accepted: ['Mississippi'], ...key }),
+        typed(text),
+        lenient,
+      ).status;
+
+    expect(typeAnswerTunablesSchema.safeParse(lenient.tunables.type_answer).success).toBe(false);
+    expect(issuePaths(textQuestion({ accepted: ['Mississippi'], maxTypos: 9 }))).toEqual([
+      ['key', 'maxTypos'],
+    ]);
+    // Three letters left out, then four.
+    expect(grade({}, 'Misisipi')).toBe('correct');
+    expect(grade({}, 'Misisip')).toBe('incorrect');
+    expect(grade({ maxTypos: 9 }, 'Misisipi')).toBe('correct');
+    expect(grade({ maxTypos: 9 }, 'Misisip')).toBe('incorrect');
+  });
+
   it('R11: a timed-out answer is unanswered, and submitted text that is empty is incorrect', () => {
     expect(runFixtures('unanswered', 'empty', 'spaces-only', 'punctuation-only').failures).toEqual(
       [],

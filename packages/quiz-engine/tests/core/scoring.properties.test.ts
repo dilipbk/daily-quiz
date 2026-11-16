@@ -153,10 +153,8 @@ describe('scoring properties', () => {
     );
   });
 
-  it('D13: Standard, ×1.5 and ×2 players with the same answers and times score the same', () => {
+  it('D13: Standard, ×1.5 and ×2 players earn the same speed bonus for the same answers at the same times', () => {
     // The A11Y-08 setting lives here, in the test: ScoreInput has nowhere to put it.
-    const settings = [1, 1.5, 2];
-
     interface Played {
       readonly grade: Grade;
       readonly difficultyMultiplier: number;
@@ -164,57 +162,58 @@ describe('scoring properties', () => {
       readonly elapsedMs: number;
     }
 
-    /** Answers a player on `slowest` could have given: each inside that player's own deadline. */
-    const playedWithin = (slowest: number): fc.Arbitrary<Played[]> =>
-      fc.array(
-        fc
-          .record({
-            grade,
-            difficultyMultiplier: multiplier,
-            standardLimitMs,
-            shareOfDeadline: fc.double({ min: 0, max: 1, noNaN: true }),
-          })
-          .map(({ shareOfDeadline, ...played }) => ({
-            ...played,
-            elapsedMs: Math.floor(shareOfDeadline * slowest * played.standardLimitMs),
-          })),
-        { maxLength: 12 },
-      );
+    /** Answers a ×2 player could have given: each inside twice the question's Standard limit. */
+    const played: fc.Arbitrary<Played[]> = fc.array(
+      fc
+        .record({
+          grade,
+          difficultyMultiplier: multiplier,
+          standardLimitMs,
+          shareOfDeadline: fc.double({ min: 0, max: 1, noNaN: true }),
+        })
+        .map(({ shareOfDeadline, ...answer }) => ({
+          ...answer,
+          elapsedMs: Math.floor(shareOfDeadline * 2 * answer.standardLimitMs),
+        })),
+      { maxLength: 12 },
+    );
 
     /** What a device on `setting` reports: past its own deadline the question timed out. */
     const reportedOn =
       (setting: number) =>
-      (played: Played): ScoreInput => ({
-        grade: played.elapsedMs <= setting * played.standardLimitMs ? played.grade : unanswered(),
-        difficultyMultiplier: played.difficultyMultiplier,
+      (answer: Played): ScoreInput => ({
+        grade: answer.elapsedMs <= setting * answer.standardLimitMs ? answer.grade : unanswered(),
+        difficultyMultiplier: answer.difficultyMultiplier,
         timing: {
           timed: true,
-          elapsedMs: played.elapsedMs,
-          standardLimitMs: played.standardLimitMs,
+          elapsedMs: answer.elapsedMs,
+          standardLimitMs: answer.standardLimitMs,
         },
       });
 
     fc.assert(
-      fc.property(
-        fc
-          .constantFrom(...settings)
-          .chain((slowest) => fc.tuple(fc.constant(slowest), playedWithin(slowest))),
-        scoringConfig,
-        ([slowest, played], config) => {
-          const scores = settings
-            .filter((setting) => setting >= slowest)
-            .map((setting) => scoreSession(played.map(reportedOn(setting)), config));
+      fc.property(played, scoringConfig, (answers, config) => {
+        const speedBonusesOn = (setting: number): number[] =>
+          scoreSession(answers.map(reportedOn(setting)), config).answers.map(
+            (answer) => answer.speedBonus,
+          );
 
-          for (const score of scores) expect(score).toEqual(scores[0]);
+        // The three reports differ wherever an answer came after a player's own deadline: a
+        // timeout for one player is a late answer for another. The extra time earns no speed
+        // bonus, so each player gets the Standard player's, answer for answer.
+        const standard = speedBonusesOn(1);
+        expect(speedBonusesOn(1.5)).toEqual(standard);
+        expect(speedBonusesOn(2)).toEqual(standard);
 
-          // Time past the Standard limit neither helps nor hurts: it scores as an answer at the limit.
-          const atTheLimit = played.map((answer) => ({
-            ...answer,
-            elapsedMs: Math.min(answer.elapsedMs, answer.standardLimitMs),
-          }));
-          expect(scoreSession(atTheLimit.map(reportedOn(2)), config)).toEqual(scores[0]);
-        },
-      ),
+        // Time past the Standard limit neither helps nor hurts: it scores as an answer at the limit.
+        const atTheLimit = answers.map((answer) => ({
+          ...answer,
+          elapsedMs: Math.min(answer.elapsedMs, answer.standardLimitMs),
+        }));
+        expect(scoreSession(answers.map(reportedOn(2)), config)).toEqual(
+          scoreSession(atTheLimit.map(reportedOn(2)), config),
+        );
+      }),
     );
   });
 

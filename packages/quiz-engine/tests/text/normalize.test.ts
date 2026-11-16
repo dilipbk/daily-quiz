@@ -63,6 +63,31 @@ describe('normalizeAnswerText', () => {
     expect(normalize('Ŧ')).toBe('t');
   });
 
+  it('R9: every block of combining marks used with Latin, Greek and Cyrillic is removed, from its first code point to its last', () => {
+    const blocks: [name: string, first: number, last: number][] = [
+      ['Combining Diacritical Marks', 0x0300, 0x036f],
+      ['Combining Diacritical Marks Extended', 0x1ab0, 0x1aff],
+      ['Combining Diacritical Marks Supplement', 0x1dc0, 0x1dff],
+      ['Combining Diacritical Marks for Symbols', 0x20d0, 0x20ff],
+      ['Combining Half Marks', 0xfe20, 0xfe2f],
+    ];
+
+    for (const [name, first, last] of blocks) {
+      for (const mark of [first, last]) {
+        const marked = `e${String.fromCodePoint(mark)}z`;
+
+        expect(normalize(marked), `${name}, U+${mark.toString(16)}`).toBe('ez');
+      }
+    }
+    // Marks in use from the part of the first block after the iota subscript, U+0345: the tie
+    // bar of "t\u0361s", and the small letters written above in medieval German.
+    expect(normalize('t\u0361s')).toBe('ts');
+    expect(normalize('u\u0364ber')).toBe('uber');
+    // A vector arrow over a symbol, and a ligature tie made of two half marks.
+    expect(normalize('v\u20d7')).toBe('v');
+    expect(normalize('t\ufe20s\ufe21')).toBe('ts');
+  });
+
   it('QT-03 diacritics: marks that carry meaning in other scripts are kept', () => {
     // Two Hindi words that differ by a vowel sign, and an Arabic word with and without harakat.
     expect(normalize('कि')).not.toBe(normalize('की'));
