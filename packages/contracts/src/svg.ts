@@ -15,6 +15,12 @@
 // or as a value. That matters because a browser's HTML parser changes its rules inside `<title>`
 // and `<desc>`: those two hold text only here, and a value such as `</title><img onerror=…>`
 // can't be written at all.
+//
+// A second rule: white space is a space, a tab, a line feed or a carriage return, the four that
+// XML and HTML both count as white space. JavaScript's `\s` is not used to separate anything,
+// because it also matches characters such as U+00A0 that a browser reads as part of a name or
+// of an unquoted value: `x=\u00A0' onload=… '` would be one quoted value here and a live
+// attribute there.
 
 /** The longest rendered formula, in UTF-16 units. */
 export const maxSvgLength = 200_000;
@@ -124,7 +130,7 @@ function attributeProblem(name: string, value: string): string | null {
   }
   if (name === 'style') {
     // Plain declarations such as "vertical-align: -0.566ex;": no brackets, quotes or escapes.
-    return /^[A-Za-z0-9\s:;.,%#-]*$/.test(value)
+    return /^[A-Za-z0-9 \t\n\r:;.,%#-]*$/.test(value)
       ? null
       : 'A style holds something other than plain declarations.';
   }
@@ -139,7 +145,8 @@ function attributeProblem(name: string, value: string): string | null {
 function attributesOf(
   rest: string,
 ): { readonly problem: string } | { readonly selfClosing: boolean } {
-  const attribute = /\s+([A-Za-z][A-Za-z0-9:_-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+  const attribute =
+    /[ \t\n\r]+([A-Za-z][A-Za-z0-9:_-]*)[ \t\n\r]*=[ \t\n\r]*(?:"([^"]*)"|'([^']*)')/g;
   const seen: string[] = [];
   let position = 0;
 
@@ -159,7 +166,7 @@ function attributesOf(
   }
 
   const tail = rest.slice(position);
-  if (!/^\s*\/?$/.test(tail)) {
+  if (!/^[ \t\n\r]*\/?$/.test(tail)) {
     return { problem: 'An element holds something that is not a quoted attribute.' };
   }
   return { selfClosing: tail.endsWith('/') };
@@ -202,7 +209,7 @@ export function svgProblem(svg: string): string | null {
     if (!allowedElements.includes(name)) return `The element <${name}> is not allowed.`;
 
     if (match[1] === '/') {
-      if (rest.trim() !== '') return 'A closing tag holds more than its name.';
+      if (!/^[ \t\n\r]*$/.test(rest)) return 'A closing tag holds more than its name.';
       if (open.pop() !== name) return 'Its elements are not properly nested.';
       rootClosed = open.length === 0;
     } else {

@@ -146,6 +146,21 @@ describe('rendered math', () => {
     ['a bracket in a value', svgWith('<g data-latex="a > b"></g>')],
     ['a closing tag in a value', svgWith('<g data-latex="</g>"></g>')],
     ['a bracket in text', svgWith('<text>a > b</text>')],
+    // A browser separates attributes with ASCII white space only. To it, a no-break space after
+    // the "=" begins an unquoted value, which ends at the next space and frees what follows.
+    [
+      'a no-break space that turns a quoted value into attributes',
+      svgWith("<g data-x=\u00A0' onload=alert(1) '></g>"),
+    ],
+    ['a no-break space before the equals sign', svgWith('<g id\u00A0="x"></g>')],
+    ['a no-break space between attributes', svgWith('<g id="x"\u00A0fill="none"></g>')],
+    ['a no-break space after the element name', svgWith('<g\u00A0id="x"></g>')],
+    ['a line separator between attributes', svgWith('<g id="x"\u2028fill="none"></g>')],
+    ['a byte-order mark before an attribute', svgWith('<g \uFEFFid="x"></g>')],
+    ['a form feed between attributes', svgWith('<g id="x"\ffill="none"></g>')],
+    ['a no-break space in a closing tag', svgWith('<g></g\u00A0>')],
+    ['a no-break space before a closing slash', svgWith('<path d="M0 0"\u00A0/>')],
+    ['a no-break space in a style', svgWith('<path style="fill:\u00A0red" d="M0 0"></path>')],
   ])('what the grammar does not describe is refused: %s', (_name, svg) => {
     expect(svgProblem(svg)).not.toBeNull();
     expect(accepts(mathRenderingSchema, { ...formula, svg })).toBe(false);
@@ -170,6 +185,12 @@ describe('rendered math', () => {
       'line breaks between attributes',
       svgWith('<path\n  d="M0 0"\n  fill="currentColor"\n></path>'),
     ],
+    [
+      'tabs and carriage returns between attributes',
+      svgWith('<path\td="M0 0"\r\n\tfill="none"></path>'),
+    ],
+    ['spaces around an equals sign', svgWith('<g id = "x"></g>')],
+    ['a letter outside ASCII inside a quoted value', svgWith('<g aria-label="α\u00A0β"></g>')],
     ['an empty drawing', '<svg xmlns="http://www.w3.org/2000/svg"></svg>'],
     ['a drawing closed in its own tag', '<svg xmlns="http://www.w3.org/2000/svg"/>'],
   ])('what the grammar describes passes: %s', (_name, svg) => {
