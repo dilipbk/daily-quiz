@@ -21,7 +21,8 @@ export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 /**
  * - `none`: per-player or changing; never stored by a shared cache.
- * - `etag`: answered with an `ETag`, and with 304 to a matching `If-None-Match`.
+ * - `etag`: answered with an `ETag`, and with 304 to a matching `If-None-Match`. A cache asks
+ *   the server every time (`Cache-Control: no-cache`), so a body is never older than its answer.
  * - `immutable`: the URL names a version, so the response never changes (roadmap §7).
  */
 export type Caching = 'none' | 'etag' | 'immutable';

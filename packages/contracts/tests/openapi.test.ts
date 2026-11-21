@@ -232,9 +232,9 @@ describe('the OpenAPI document', () => {
       expect(sendsIfNoneMatch, endpoint.id).toBe(endpoint.caching !== 'none');
       expect('304' in responses, endpoint.id).toBe(endpoint.caching !== 'none');
     }
-    expect(operationOf(endpointNamed('config.get')).responses['200']?.headers).toHaveProperty(
-      'ETag',
-    );
+    const { responses } = operationOf(endpointNamed('config.get'));
+    expect(Object.keys(responses['200']?.headers ?? {})).toEqual(['ETag', 'Cache-Control']);
+    expect(Object.keys(responses['304']?.headers ?? {})).toEqual(['ETag', 'Cache-Control']);
   });
 
   it('a response with no body is a 204 with no content', () => {
@@ -335,9 +335,39 @@ describe('a registry the generator refuses', () => {
     expect(() => generate([toy({ params: null })])).toThrow('name different parameters');
   });
 
-  it('two endpoints on one method and path throw', () => {
+  it('two endpoints on one method and path throw, however the parameter is named', () => {
+    const renamed = toy({
+      id: 'toys.replace',
+      path: '/toys/:id',
+      params: z.strictObject({ id: idSchema }),
+    });
+
     expect(() => generate([toy({}), toy({ id: 'toys.replace' })])).toThrow(
       'Two endpoints answer PUT /toys/:toyId',
+    );
+    expect(() => generate([toy({}), renamed])).toThrow('Two endpoints answer PUT /toys/:id');
+  });
+
+  it('two endpoints with one id throw', () => {
+    expect(() => generate([toy({}), toy({ method: 'PATCH' })])).toThrow(
+      'Two endpoints have the id "toys.rename"',
+    );
+  });
+
+  it('one schema listed under two names throws', () => {
+    const shared = z.object({ name: z.string() });
+
+    expect(() => generate([], { Toy: shared, Plaything: shared })).toThrow(
+      'One schema is listed as "Toy" and as "Plaything"',
+    );
+  });
+
+  it('a 204 with a body, and another status without one, throw', () => {
+    const body = z.object({ name: z.string() });
+
+    expect(() => generate([toy({ success: { status: 204, body } })])).toThrow('must answer 204');
+    expect(() => generate([toy({ success: { status: 200, body: null } })])).toThrow(
+      'must answer 204',
     );
   });
 

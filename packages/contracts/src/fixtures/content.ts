@@ -87,6 +87,22 @@ const quickQuiz: Quiz = {
   questionTypes: ['single_choice', 'true_false'],
 };
 
+/** Two questions, for a session's fixture to play: a quiz and its session must agree. */
+export const warmUpQuizFixture: Quiz = {
+  id: 'quiz-science-warm-up',
+  version: 2,
+  title: 'A science warm-up',
+  description: 'Two quick ones to get going.',
+  cover: null,
+  domain: 'science',
+  topic: null,
+  locale: 'en',
+  questionCount: 2,
+  estimatedSeconds: 40,
+  difficulty: 'medium',
+  questionTypes: ['true_false', 'single_choice'],
+};
+
 /** The parsed form of `?domain=science&limit=20`. */
 export const quizzesQueryFixture = { domain: 'science', limit: 20 };
 
@@ -99,7 +115,10 @@ export const quizPageFixture: QuizPage = {
 };
 
 /** The last page. */
-export const lastQuizPageFixture: QuizPage = { items: [quickQuiz], nextCursor: null };
+export const lastQuizPageFixture: QuizPage = {
+  items: [warmUpQuizFixture, quickQuiz],
+  nextCursor: null,
+};
 
 /** A filter that matches nothing. */
 export const emptyQuizPageFixture: QuizPage = { items: [], nextCursor: null };

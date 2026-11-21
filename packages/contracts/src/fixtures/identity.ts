@@ -18,9 +18,9 @@ export const guestResponseFixture: GuestResponse = {
   isNew: true,
   session: {
     token: 'fixture-session-token-not-a-real-credential',
-    expiresAt: '2026-12-21T18:03:11.482Z',
+    expiresAt: '2026-12-20T09:31:40.105Z',
   },
-  serverTime: '2026-11-21T18:03:11.482Z',
+  serverTime: '2026-11-20T09:31:40.105Z',
 };
 
 /** A new guest, on the goal a new player starts with. */
@@ -28,7 +28,7 @@ export const playerFixture: Player = {
   playerId: 'player-0001',
   kind: 'guest',
   dailyGoal: 'regular',
-  createdAt: '2026-11-21T18:03:11.482Z',
+  createdAt: '2026-11-20T09:31:40.105Z',
 };
 
 export const updatePlayerFixture: UpdatePlayer = { dailyGoal: 'serious' };

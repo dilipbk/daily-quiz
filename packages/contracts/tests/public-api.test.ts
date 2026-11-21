@@ -19,6 +19,7 @@ describe('public API', () => {
       'codeTokenKinds',
       'completionResultSchema',
       'completionSchema',
+      'configCoreSchema',
       'configSchema',
       'countSchema',
       'createSessionSchema',
@@ -64,6 +65,7 @@ describe('public API', () => {
       'problemSchema',
       'progressQuerySchema',
       'progressSchema',
+      'queryIntegerSchema',
       'questionSetSchema',
       'quizPageSchema',
       'quizParamsSchema',
@@ -97,7 +99,7 @@ describe('public API', () => {
       'problemFixtures',
       'questionFixtures',
     ]);
-    expect(names).toHaveLength(37);
+    expect(names).toHaveLength(38);
   });
 
   it('@repo/contracts/openapi exports the generator and nothing else', () => {

@@ -41,7 +41,16 @@ export const configSchema = z.object({
   }),
 });
 
+/**
+ * A config without its tunables: what forces an update and what switches a feature off. An app
+ * reads this when the whole config won't parse, which is what happens when a newer server sends
+ * a tunable or a question type the app's engine doesn't hold. The forced-update screen and the
+ * kill switches must keep working in exactly that case.
+ */
+export const configCoreSchema = configSchema.omit({ tunables: true });
+
 export type Config = z.infer<typeof configSchema>;
+export type ConfigCore = z.infer<typeof configCoreSchema>;
 
 export const getConfig = defineEndpoint({
   id: 'config.get',

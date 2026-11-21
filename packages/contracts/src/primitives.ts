@@ -4,6 +4,21 @@ import * as z from 'zod';
 // The values every contract is built from (spec §19.2). Nothing here transforms what it reads,
 // with one exception: a number in a query string arrives as text and is read as a number.
 
+/** A whole number as a URL spells it: digits, with a minus sign if it needs one. Nothing else. */
+const DECIMAL = /^(?:0|-?[1-9][0-9]{0,8})$/;
+
+/**
+ * A whole number in a query string. It reads the plain decimal spelling and a number, and
+ * nothing else: not `0x10`, `1e1`, ` 5 `, `true` or a list, all of which a looser reading
+ * would turn into a number.
+ */
+export function queryIntegerSchema(min: number, max: number) {
+  return z.preprocess(
+    (value) => (typeof value === 'string' && DECIMAL.test(value) ? Number(value) : value),
+    z.int().min(min).max(max),
+  );
+}
+
 /** The id of a player, a session, a question, a quiz, a device or an asset: opaque and URL-safe. */
 export const idSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
 
@@ -13,8 +28,12 @@ export const slugSchema = z
   .max(64)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
-/** An instant, in ISO 8601, in UTC and written with a `Z`: `2026-11-21T18:03:11.123Z`. */
-export const isoTimestampSchema = z.iso.datetime();
+/**
+ * An instant, in ISO 8601, in UTC, to the millisecond and written with a `Z`:
+ * `2026-11-21T18:03:11.123Z`, which is what `toISOString()` gives. One spelling for every
+ * instant, so two timestamps compare as strings in the order they happened.
+ */
+export const isoTimestampSchema = z.iso.datetime({ precision: 3 });
 
 /** A calendar date that exists, `YYYY-MM-DD`. It names a day, not an instant. */
 export const localDateSchema = z.iso.date();
@@ -65,7 +84,7 @@ export const cursorSchema = z.string().min(1).max(512);
 /** The two query parameters of every list (spec §19.2). Spread them into a list's query schema. */
 export const pageQueryShape = {
   cursor: cursorSchema.optional(),
-  limit: z.coerce.number().int().min(1).max(maxPageSize).optional(),
+  limit: queryIntegerSchema(1, maxPageSize).optional(),
 };
 
 /** One page of a list: its items, and the cursor of the next page or `null` on the last. */

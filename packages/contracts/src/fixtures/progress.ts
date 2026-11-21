@@ -3,7 +3,8 @@ import type { Progress } from '../areas/progress.ts';
 // Progress in the states the fake server's scenarios need (spec §19.6). Levels follow ADR 0004:
 // reaching level L takes 20 × L × (L − 1) / 2 XP, so 22 XP is level 2 and 4,812 XP is level 22.
 
-export const progressQueryFixture = { timeZone: 'Asia/Kathmandu' };
+/** The parsed form of `?timeZone=Asia/Kathmandu&utcOffsetMinutes=345`. */
+export const progressQueryFixture = { timeZone: 'Asia/Kathmandu', utcOffsetMinutes: 345 };
 
 /** A guest who has not played yet. */
 export const newPlayerProgressFixture: Progress = {

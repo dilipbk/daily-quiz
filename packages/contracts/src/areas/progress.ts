@@ -1,6 +1,12 @@
 import * as z from 'zod';
 import { defineEndpoint } from '../endpoint.ts';
-import { countSchema, isoTimestampSchema, localDateSchema, timeZoneSchema } from '../primitives.ts';
+import {
+  countSchema,
+  isoTimestampSchema,
+  localDateSchema,
+  queryIntegerSchema,
+  timeZoneSchema,
+} from '../primitives.ts';
 import { dailyGoalTierSchema } from '../rules.ts';
 
 // A player's progress (spec §19.3): XP, level, streak, freezes and the daily goal. The server is
@@ -12,8 +18,14 @@ import { dailyGoalTierSchema } from '../rules.ts';
  */
 export const streakStatusSchema = z.enum(['inactive', 'lit', 'at_risk', 'frozen']);
 
-/** The device's zone now: a streak's state depends on what "today" is for the player. */
-export const progressQuerySchema = z.strictObject({ timeZone: timeZoneSchema });
+/**
+ * Where the device is now: a streak's state depends on what "today" is for the player. The
+ * offset travels with the zone, as it does in a completion, for a zone the server doesn't know.
+ */
+export const progressQuerySchema = z.strictObject({
+  timeZone: timeZoneSchema,
+  utcOffsetMinutes: queryIntegerSchema(-720, 840),
+});
 
 export const progressSchema = z.object({
   serverTime: isoTimestampSchema,

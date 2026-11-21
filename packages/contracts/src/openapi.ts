@@ -149,8 +149,9 @@ function errorResponsesOf(endpoint: Endpoint, problemName: string): Record<strin
  * The OpenAPI 3.1 document for a list of endpoints.
  *
  * Throws when a schema can't be written as JSON Schema (a `Date`, a `bigint`), when two
- * different schemas would take one name, or when a path's `:names` and its params schema differ.
- * Each is a mistake in the registry, found when the document is built.
+ * schemas would take one name or one schema two, when two endpoints share an id or a route, when
+ * a path's `:names` and its params schema differ, or when a 204 has a body. Each is a mistake in
+ * the registry, found when the document is built.
  */
 export function generateOpenApi(options: OpenApiOptions): OpenApiDocument {
   const registry = z.registry<{ id: string }>();
@@ -168,14 +169,34 @@ export function generateOpenApi(options: OpenApiOptions): OpenApiDocument {
     return proposed;
   };
 
-  for (const [name, schema] of Object.entries(options.schemas)) nameOf(schema, name);
+  for (const [name, schema] of Object.entries(options.schemas)) {
+    if (nameOf(schema, name) !== name) {
+      throw new Error(`One schema is listed as "${nameOf(schema, name)}" and as "${name}".`);
+    }
+  }
   const problemName = nameOf(problemSchema, 'Problem');
 
   const paths: Record<string, Record<string, JsonObject>> = {};
   const tags: string[] = [];
+  const ids = new Set<string>();
+  /** Each method with its path, every parameter written alike: `/a/:x` and `/a/:y` are one route. */
+  const routes = new Set<string>();
 
   for (const endpoint of options.endpoints) {
     const { id, params, query, body, success } = endpoint;
+
+    if (ids.has(id)) throw new Error(`Two endpoints have the id "${id}".`);
+    ids.add(id);
+
+    const route = `${endpoint.method} ${endpoint.path.replace(/:[A-Za-z][A-Za-z0-9]*/g, '{}')}`;
+    if (routes.has(route)) {
+      throw new Error(`Two endpoints answer ${endpoint.method} ${endpoint.path}.`);
+    }
+    routes.add(route);
+
+    if ((success.status === 204) !== (success.body === null)) {
+      throw new Error(`"${id}" must answer 204 with no body, or another status with one.`);
+    }
 
     const inPath = pathNames(endpoint.path).sort();
     const inSchema = Object.keys(params?.shape ?? {}).sort();
@@ -221,6 +242,13 @@ export function generateOpenApi(options: OpenApiOptions): OpenApiDocument {
                     : 'The version of this response.',
                 schema: { type: 'string' },
               },
+              'Cache-Control': {
+                description:
+                  endpoint.caching === 'immutable'
+                    ? 'public, immutable: the URL names a version.'
+                    : 'no-cache: a cache asks the server before it reuses a copy.',
+                schema: { type: 'string' },
+              },
             },
           };
 
@@ -260,25 +288,27 @@ export function generateOpenApi(options: OpenApiOptions): OpenApiDocument {
               },
         ...(endpoint.caching === 'none'
           ? {}
-          : { '304': { description: 'Not modified: the copy the client holds is current.' } }),
+          : {
+              '304': {
+                description: 'Not modified: the copy the client holds is current.',
+                ...cached,
+              },
+            }),
         ...errorResponsesOf(endpoint, problemName),
       },
     };
 
-    const path = openApiPath(endpoint.path);
-    const method = endpoint.method.toLowerCase();
-    const operations = (paths[path] ??= {});
-    if (operations[method] !== undefined) {
-      throw new Error(`Two endpoints answer ${endpoint.method} ${endpoint.path}.`);
-    }
-    operations[method] = operation;
+    const operations = (paths[openApiPath(endpoint.path)] ??= {});
+    operations[endpoint.method.toLowerCase()] = operation;
     if (!tags.includes(endpoint.area)) tags.push(endpoint.area);
   }
 
   // Every schema named above, converted in one call so that each points at the others by name.
   const converted = z.toJSONSchema(registry, { ...conversion, uri: componentRef }).schemas;
   if ('__shared' in converted) {
-    throw new Error('A schema refers to itself. Give it a name in the schemas option.');
+    throw new Error(
+      'zod set a schema apart without a name: it refers to itself, or it is used in several places and carries its own id. Give it a name in the schemas option.',
+    );
   }
   const schemas = Object.fromEntries(
     Object.entries(converted).map(([name, schema]) => [name, withoutDocumentKeys(schema)]),

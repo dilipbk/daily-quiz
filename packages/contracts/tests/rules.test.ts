@@ -61,9 +61,18 @@ describe('game rules', () => {
     ['a goal of zero', 'dailyGoal', 'casual', 0],
     ['a casual goal above the regular one', 'dailyGoal', 'casual', 60],
     ['a regular goal above the serious one', 'dailyGoal', 'regular', 101],
-    ['a key the rules do not name', 'xp', 'perStreakDay', 5],
   ])('refuses %s', (_name, group, key, value) => {
     expect(refuses(rulesWith(group, key, value))).toBe(true);
+  });
+
+  // A rule added later must not cost an older app its whole config, kill switches included.
+  it('a rule this build does not know is dropped, and the rest still parses', () => {
+    const fromANewerServer = rulesWith('xp', 'perStreakDay', 5);
+
+    expect(gameRulesSchema.parse(fromANewerServer)).toEqual(gameRulesFixture);
+    expect(gameRulesSchema.parse({ ...gameRulesFixture, leagues: { size: 30 } })).toEqual(
+      gameRulesFixture,
+    );
   });
 
   it('refuses rules with a group missing', () => {

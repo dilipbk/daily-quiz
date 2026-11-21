@@ -8,6 +8,7 @@ import {
   localeSchema,
   pageOf,
   pageQueryShape,
+  queryIntegerSchema,
   slugSchema,
   timeZoneSchema,
   utcOffsetMinutesSchema,
@@ -21,13 +22,26 @@ const accepts = (schema: { safeParse: (value: unknown) => { success: boolean } }
 
 describe('timestamps and dates', () => {
   it('a timestamp must be UTC with a Z', () => {
-    expect(accepts(isoTimestampSchema, '2026-11-21T18:03:11Z')).toBe(true);
     expect(accepts(isoTimestampSchema, '2026-11-21T18:03:11.123Z')).toBe(true);
+    expect(accepts(isoTimestampSchema, '2026-11-21T18:03:11.000Z')).toBe(true);
 
     expect(accepts(isoTimestampSchema, '2026-11-21T23:48:11+05:45')).toBe(false);
     expect(accepts(isoTimestampSchema, '2026-11-21T18:03Z')).toBe(false);
     expect(accepts(isoTimestampSchema, '2026-11-21T18:03:11')).toBe(false);
     expect(accepts(isoTimestampSchema, 1_795_284_191_000)).toBe(false);
+  });
+
+  it('a timestamp has one spelling, to the millisecond, so two compare as strings', () => {
+    expect(accepts(isoTimestampSchema, '2026-11-21T18:03:11Z')).toBe(false);
+    expect(accepts(isoTimestampSchema, '2026-11-21T18:03:11.1Z')).toBe(false);
+    expect(accepts(isoTimestampSchema, '2026-11-21T18:03:11.123456Z')).toBe(false);
+
+    const inOrder = [
+      '2026-11-21T18:03:11.900Z',
+      '2026-11-21T18:03:12.000Z',
+      '2026-12-01T00:00:00.000Z',
+    ];
+    expect([...inOrder].reverse().sort()).toEqual(inOrder);
   });
 
   it('a date must exist', () => {
@@ -148,5 +162,19 @@ describe('cursor pagination', () => {
     for (const value of ['51', '0', '-1', '2.5', 'abc', '']) {
       expect(accepts(limit, value), value).toBe(false);
     }
+  });
+
+  it('a number in a query string is plain decimal digits and nothing looser', () => {
+    const offset = queryIntegerSchema(-720, 840);
+
+    expect(offset.parse('345')).toBe(345);
+    expect(offset.parse('-480')).toBe(-480);
+    expect(offset.parse('0')).toBe(0);
+    expect(offset.parse(345)).toBe(345);
+    for (const value of ['0x10', '1e1', ' 5 ', '+5', '05', '-0', '5.0', '', true, null, ['7']]) {
+      expect(accepts(offset, value), JSON.stringify(value)).toBe(false);
+    }
+    expect(accepts(offset, '841')).toBe(false);
+    expect(accepts(offset, '99999999999999999999')).toBe(false);
   });
 });

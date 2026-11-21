@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { configSchema, getConfig } from '../src/areas/config.ts';
+import { configCoreSchema, configSchema, getConfig } from '../src/areas/config.ts';
 import { configFixture } from '../src/fixtures/config.ts';
 import { without } from './support.ts';
 
@@ -82,5 +82,19 @@ describe('GET /config', () => {
     const parsed = configSchema.parse({ ...configFixture, dailySets: { today: 'v7' } });
 
     expect(parsed).toEqual(configFixture);
+  });
+
+  // The engine's schemas are strict, so a tunable this build doesn't hold fails the whole config.
+  // The forced-update screen and the kill switches have to work in exactly that case.
+  it('an app that cannot read a newer server’s tunables can still read the minimum version and the flags', () => {
+    const { questionTypes } = configFixture.tunables;
+    const fromANewerServer = withTunables('questionTypes', { ...questionTypes, hotspot: {} });
+
+    expect(refuses(fromANewerServer)).toBe(true);
+    expect(configCoreSchema.parse(fromANewerServer)).toEqual(without(configFixture, 'tunables'));
+    expect(configCoreSchema.parse({ ...configFixture, tunables: 'unreadable' })).toMatchObject({
+      minAppVersion: configFixture.minAppVersion,
+      flags: configFixture.flags,
+    });
   });
 });

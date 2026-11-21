@@ -16,6 +16,7 @@ export {
   pageOf,
   pageQueryShape,
   platformSchema,
+  queryIntegerSchema,
   slugSchema,
   timeZoneSchema,
   utcOffsetMinutesSchema,
@@ -101,8 +102,8 @@ export type {
   SessionRules,
 } from './questions.ts';
 
-export { configSchema } from './areas/config.ts';
-export type { Config } from './areas/config.ts';
+export { configCoreSchema, configSchema } from './areas/config.ts';
+export type { Config, ConfigCore } from './areas/config.ts';
 
 export {
   deviceParamsSchema,

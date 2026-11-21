@@ -141,12 +141,26 @@ describe('POST /sessions/:sessionId/complete', () => {
     expect(accepts(completionSchema, withValue(completionFixture, 'serverOffsetMs', null))).toBe(
       true,
     );
+    expect(accepts(completionSchema, withValue(completionFixture, 'serverOffsetMs', 1.5))).toBe(
+      false,
+    );
+    expect(
+      accepts(completionSchema, withValue(completionFixture, 'serverOffsetMs', 4_000_000_000_000)),
+    ).toBe(false);
     expect(
       accepts(
         completionSchema,
         withValue(completionFixture, 'completedAt', '2026-11-21T17:58:21+05:45'),
       ),
     ).toBe(false);
+  });
+
+  // A phone's clock can be set back while a session runs. That is for the server's plausibility
+  // check to weigh; refusing it here would leave an honest completion stuck in the outbox.
+  it('a completion whose clock went backwards is still a completion', () => {
+    const clockSetBack = withValue(completionFixture, 'completedAt', '2026-11-21T12:09:00.000Z');
+
+    expect(accepts(completionSchema, clockSetBack)).toBe(true);
   });
 
   it('an answer is a tagged answer or null', () => {

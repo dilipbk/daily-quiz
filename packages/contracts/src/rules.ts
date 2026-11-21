@@ -5,6 +5,10 @@ import * as z from 'zod';
 // streak or an XP total as `NaN`. Remote config serves the rules, so they are checked here, once,
 // when a config is read.
 //
+// The rules are objects that drop a key they don't name, as every response does (ADR 0023): a
+// rule added later reaches an older app as a rule it never reads, and the rest of the config,
+// the kill switches and the minimum version among it, still parses.
+//
 // The shapes follow `GameRules`, `SessionSource`, `PlayMode` and `DailyGoalTier` in
 // packages/game-rules/src (ADR 0004). They are written out because that package can't be
 // imported from this branch; ADR 0024 records the follow-up that ties the two together.
@@ -27,8 +31,8 @@ const goalSchema = z.int().min(1).max(1_000_000);
 const isStrictlyRising = (values: readonly number[]): boolean =>
   values.every((value, index) => index === 0 || value > (values[index - 1] ?? value));
 
-export const gameRulesSchema = z.strictObject({
-  streak: z.strictObject({
+export const gameRulesSchema = z.object({
+  streak: z.object({
     /** STK-01: a session that is not a daily set qualifies from this many questions. */
     minQuestions: z.int().min(1).max(1000),
     /** STK-06: streak lengths that are celebrated, shortest first, each once. */
@@ -41,7 +45,7 @@ export const gameRulesSchema = z.strictObject({
     /** STK-04: freezes earned at each milestone. */
     freezesPerMilestone: z.int().min(0).max(100),
   }),
-  xp: z.strictObject({
+  xp: z.object({
     perSession: xpAmountSchema,
     perCorrectAnswer: xpAmountSchema,
     perfectBonus: xpAmountSchema,
@@ -50,13 +54,13 @@ export const gameRulesSchema = z.strictObject({
     /** XP-04: the most XP unsynced sessions add to one local day. */
     offlineDailyCap: xpAmountSchema,
   }),
-  levels: z.strictObject({
+  levels: z.object({
     /** XP-02: going from level L to L+1 costs `stepXp × L`. Zero would make every level free. */
     stepXp: z.int().min(1).max(1_000_000),
   }),
   /** XP-03: the XP target of each tier, none above the next. */
   dailyGoal: z
-    .strictObject({ casual: goalSchema, regular: goalSchema, serious: goalSchema })
+    .object({ casual: goalSchema, regular: goalSchema, serious: goalSchema })
     .refine(({ casual, regular, serious }) => casual <= regular && regular <= serious, {
       error: 'A goal must not be above the next tier: casual, then regular, then serious.',
     }),

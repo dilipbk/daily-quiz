@@ -59,6 +59,10 @@ export const sessionEvaluationSchema: z.ZodType<SessionEvaluation> = z.object({
 
 export const completionResultSchema = z.object({
   sessionId: idSchema,
+  /**
+   * When the server handled the completion. A retry under the same `Idempotency-Key` gets the
+   * stored result back, this time included, so the app doesn't measure its clock from it.
+   */
   serverTime: isoTimestampSchema,
   /** The calendar date the completion was credited to: the player's local date when it ended. */
   creditedDate: localDateSchema,
@@ -120,6 +124,9 @@ export const sessionSchema = z
 
 // Completing a session
 
+/** The furthest a device's clock can be from the server's and still be believed: a century. */
+const maxClockOffsetMs = 3_200_000_000_000;
+
 /** The longest one question can be open, in milliseconds: a day. */
 const maxElapsedMs = 86_400_000;
 
@@ -146,7 +153,10 @@ const answerEntrySchema = z.strictObject({
 export const completionSchema = z.strictObject({
   /** The version of the grading engine in the app that played. */
   engineVersion: z.int().min(1).max(1_000_000),
-  /** By the device's clock. */
+  /**
+   * By the device's clock. A clock can be set back while a session runs, so nothing here requires
+   * this to be before `completedAt`: that is for the server's plausibility check to weigh.
+   */
   startedAt: isoTimestampSchema,
   /** By the device's clock: the instant the streak day is credited from (OFF-04). */
   completedAt: isoTimestampSchema,
@@ -154,7 +164,7 @@ export const completionSchema = z.strictObject({
    * The server's clock minus the device's, in milliseconds, as the app last measured it from a
    * `serverTime`; `null` if it never has. The server adds it to the two times above.
    */
-  serverOffsetMs: z.int().nullable(),
+  serverOffsetMs: z.int().min(-maxClockOffsetMs).max(maxClockOffsetMs).nullable(),
   /** The device's zone when the session ended. It decides the calendar date that is credited. */
   timeZone: timeZoneSchema,
   /** The zone's offset at that instant: the server's fallback for a zone it doesn't know (ADR 0005). */

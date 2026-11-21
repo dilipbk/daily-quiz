@@ -13,6 +13,7 @@ import {
   quizPageFixture,
   quizParamsFixture,
   quizzesQueryFixture,
+  warmUpQuizFixture,
 } from './content.ts';
 import { globalDailySetFixture, globalSetParamsFixture } from './dailies.ts';
 import {
@@ -96,6 +97,7 @@ export const fixtures: readonly Fixture[] = [
   of(endpoints.listQuizzes, 'response', emptyQuizPageFixture, 'empty'),
   of(endpoints.getQuiz, 'params', quizParamsFixture),
   of(endpoints.getQuiz, 'response', quizFixture),
+  of(endpoints.getQuiz, 'response', warmUpQuizFixture, 'no-cover'),
 
   of(endpoints.getGlobalDailySet, 'params', globalSetParamsFixture),
   of(endpoints.getGlobalDailySet, 'response', globalDailySetFixture),
@@ -173,4 +175,5 @@ export {
   sessionParamsFixture,
   updatedPlayerFixture,
   updatePlayerFixture,
+  warmUpQuizFixture,
 };

@@ -26,9 +26,24 @@ describe('GET /me/progress', () => {
     expect(getProgress).toMatchObject({ method: 'GET', path: '/me/progress', access: 'player' });
     expect(progressQuerySchema.parse(progressQueryFixture)).toEqual(progressQueryFixture);
     expect(accepts(progressQuerySchema, {})).toBe(false);
-    expect(accepts(progressQuerySchema, { timeZone: 'Asia/Kathmandu', playerId: 'p2' })).toBe(
-      false,
-    );
+    expect(accepts(progressQuerySchema, { ...progressQueryFixture, playerId: 'p2' })).toBe(false);
+  });
+
+  it('the zone travels with its offset, which arrives as text in a query string', () => {
+    expect(
+      progressQuerySchema.parse({ timeZone: 'Asia/Kathmandu', utcOffsetMinutes: '345' }),
+    ).toEqual(progressQueryFixture);
+    expect(
+      progressQuerySchema.parse({ timeZone: 'America/Los_Angeles', utcOffsetMinutes: '-480' }),
+    ).toEqual({ timeZone: 'America/Los_Angeles', utcOffsetMinutes: -480 });
+
+    expect(accepts(progressQuerySchema, { timeZone: 'Asia/Kathmandu' })).toBe(false);
+    expect(
+      accepts(progressQuerySchema, { timeZone: 'Asia/Kathmandu', utcOffsetMinutes: '900' }),
+    ).toBe(false);
+    expect(
+      accepts(progressQuerySchema, { timeZone: 'Asia/Kathmandu', utcOffsetMinutes: '5.75' }),
+    ).toBe(false);
   });
 
   it('progress parses for a new player, a first day, a hundred days and a frozen streak', () => {

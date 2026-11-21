@@ -1,4 +1,5 @@
 import type { Completion, CompletionResult, CreateSession, Session } from '../areas/sessions.ts';
+import { warmUpQuizFixture } from './content.ts';
 import { globalSetParamsFixture } from './dailies.ts';
 import { firstDailyProgressFixture } from './progress.ts';
 import { questionFixtures, questionSetFixture } from './questions.ts';
@@ -15,7 +16,7 @@ export const createDaily5Fixture: CreateSession = { source: 'daily_5', date: '20
 
 export const createQuizFixture: CreateSession = {
   source: 'quiz',
-  quizId: 'quiz-periodic-table',
+  quizId: warmUpQuizFixture.id,
   mode: 'relaxed',
 };
 
@@ -175,11 +176,17 @@ export const quizSessionFixture: Session = {
   source: 'quiz',
   mode: 'relaxed',
   status: 'open',
-  quizId: 'quiz-periodic-table',
-  quizVersion: 4,
+  quizId: warmUpQuizFixture.id,
+  quizVersion: warmUpQuizFixture.version,
   createdAt: '2026-11-21T12:25:11.092Z',
   expiresAt: '2026-11-28T12:25:11.092Z',
   serverTime: '2026-11-21T12:25:11.092Z',
   result: null,
-  set: { rules: questionSetFixture.rules, questions: questionFixtures.slice(6) },
+  // The quiz's two science questions.
+  set: {
+    rules: questionSetFixture.rules,
+    questions: questionFixtures.filter(
+      ({ id }) => id === 'q-sound-in-water' || id === 'q-symbol-w',
+    ),
+  },
 };
