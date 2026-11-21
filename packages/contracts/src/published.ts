@@ -2,7 +2,7 @@ import { blockLimits } from '@repo/content-blocks';
 import type { Block, CodeBlock, MathBlock } from '@repo/content-blocks';
 import * as z from 'zod';
 import { httpsUrlSchema, idSchema } from './primitives.ts';
-import { svgProblem } from './svg.ts';
+import { maxSvgLength, svgProblem } from './svg.ts';
 
 // The published forms of content (spec §11.3, ADR 0022). An author writes blocks: a math block
 // is LaTeX, a code block is source, an image block is an asset id. Publishing renders each one
@@ -69,10 +69,13 @@ export const mediaAssetSchema = z.discriminatedUnion('kind', [imageAssetSchema, 
  * runs, loads, links or styles (SEC-08). The SVG comes from our own publish pipeline; the grammar
  * is there so that a fault upstream can't put active markup in front of a player.
  */
-const svgSchema = z.string().superRefine((value, context) => {
-  const problem = svgProblem(value);
-  if (problem !== null) context.addIssue({ code: 'custom', message: problem });
-});
+const svgSchema = z
+  .string()
+  .max(maxSvgLength)
+  .superRefine((value, context) => {
+    const problem = svgProblem(value);
+    if (problem !== null) context.addIssue({ code: 'custom', message: problem });
+  });
 
 /** A size in `ex`, the unit MathJax measures in: the device scales it by its text size. */
 const exSchema = z.number().positive().max(1000);
@@ -121,7 +124,10 @@ const tokenSchema = z.object({
 export const codeRenderingSchema = z
   .object({
     /** The block's language and source, exactly as stored: what this rendering is matched by. */
-    language: z.string().min(1).max(32),
+    language: z
+      .string()
+      .max(32)
+      .regex(/^[^\s]+$/),
     source: z.string().min(1).max(blockLimits.sourceLength),
     /** The source as lines of tokens. An empty line is an empty list. */
     lines: z
@@ -139,9 +145,9 @@ export const codeRenderingSchema = z
 
 const hasNoRepeats = (keys: readonly string[]): boolean => new Set(keys).size === keys.length;
 
-/** Language and source as one key. A language has no line feed, so no two pairs share a key. */
+/** Language and source as one key, written so that no two different pairs share one. */
 const codeKey = (code: { readonly language: string; readonly source: string }): string =>
-  `${code.language}\n${code.source}`;
+  JSON.stringify([code.language, code.source]);
 
 /**
  * Everything rendered for one piece of a question. All three lists are always present, and a

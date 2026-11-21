@@ -112,24 +112,23 @@ describe('rendered math', () => {
     ['a slash where a space would be', svgWith('<path/onload="alert(1)" d="M0 0"></path>')],
     ['a namespaced element', svgWith('<svg:script>alert(1)</svg:script>')],
     ['an element in the wrong case', svgWith('<Path d="M0 0"></Path>')],
-    ['an element outside the list', svgWith('<clipPath id="c"></clipPath>')],
+    ['an element outside the list', svgWith('<clipPath id="MJX-c"></clipPath>')],
     ['an attribute outside the list', svgWith('<path tabindex="0" d="M0 0"></path>')],
+    ['a class, which a page could style', svgWith('<g class="hidden"></g>')],
     ['a numeric reference in an attribute', svgWith('<use href="&#x23;MJX-1-I-78"></use>')],
     ['a numeric reference in a path', svgWith('<path d="&#77;0 0"></path>')],
-    ['an unknown named reference', svgWith('<path d="M0 0" id="&nbsp;"></path>')],
+    ['an unknown named reference', svgWith('<path d="M0 0" data-x="&nbsp;"></path>')],
     ['a broken reference in text', svgWith('<text>a & b</text>')],
-    ['an attribute given twice', svgWith('<use href="#a" href="#b"></use>')],
-    ['a reference to an empty fragment', svgWith('<use href="#"></use>')],
-    ['a url() to a fragment', svgWith('<path fill="url(#gradient)" d="M0 0"></path>')],
+    ['an attribute given twice', svgWith('<use href="#MJX-1-I-78" href="#MJX-b"></use>')],
     ['a style with brackets', svgWith('<path style="width:calc(1px)" d="M0 0"></path>')],
-    ['a style with an escape', svgWith('<path style="fill:\\75rl" d="M0 0"></path>')],
+    ['a style with an escape', svgWith('<path style="vertical-align:\\75rl" d="M0 0"></path>')],
     [
       'another namespace',
       mathJaxSvg.replace('http://www.w3.org/2000/svg', 'http://evil.example/ns'),
     ],
     ['elements that cross', svgWith('<g><text>x</g></text>')],
     ['an element left open', svgWith('<g>')],
-    ['a closing tag with an attribute', svgWith('<g></g id="x">')],
+    ['a closing tag with an attribute', svgWith('<g></g fill="none">')],
     ['a bracket inside a tag', svgWith('<path d="M0 0" <g>></path>')],
     ['a second root', `${mathJaxSvg}${mathJaxSvg}`],
     ['a root that is not svg', '<g></g>'],
@@ -152,22 +151,78 @@ describe('rendered math', () => {
       'a no-break space that turns a quoted value into attributes',
       svgWith("<g data-x=\u00A0' onload=alert(1) '></g>"),
     ],
-    ['a no-break space before the equals sign', svgWith('<g id\u00A0="x"></g>')],
-    ['a no-break space between attributes', svgWith('<g id="x"\u00A0fill="none"></g>')],
-    ['a no-break space after the element name', svgWith('<g\u00A0id="x"></g>')],
-    ['a line separator between attributes', svgWith('<g id="x"\u2028fill="none"></g>')],
-    ['a byte-order mark before an attribute', svgWith('<g \uFEFFid="x"></g>')],
-    ['a form feed between attributes', svgWith('<g id="x"\ffill="none"></g>')],
+    ['a no-break space before the equals sign', svgWith('<g fill\u00A0="none"></g>')],
+    ['a no-break space between attributes', svgWith('<g fill="none"\u00A0stroke="none"></g>')],
+    ['a no-break space after the element name', svgWith('<g\u00A0fill="none"></g>')],
+    ['a line separator between attributes', svgWith('<g fill="none"\u2028stroke="none"></g>')],
+    ['a byte-order mark before an attribute', svgWith('<g \uFEFFfill="none"></g>')],
+    ['a form feed between attributes', svgWith('<g fill="none"\fstroke="none"></g>')],
     ['a no-break space in a closing tag', svgWith('<g></g\u00A0>')],
     ['a no-break space before a closing slash', svgWith('<path d="M0 0"\u00A0/>')],
-    ['a no-break space in a style', svgWith('<path style="fill:\u00A0red" d="M0 0"></path>')],
+    ['a slash that does not end the tag', svgWith('<path d="M0 0" / ></path>')],
   ])('what the grammar does not describe is refused: %s', (_name, svg) => {
     expect(svgProblem(svg)).not.toBeNull();
     expect(accepts(mathRenderingSchema, { ...formula, svg })).toBe(false);
   });
 
+  // CSS reads "\75rl(" as "url(", so a value is never left for CSS to interpret: no backslash,
+  // no bracket, and a grammar of its own for a colour, a transform and a style.
   it.each([
-    ['a reference inside the drawing', svgWith('<use href="#MJX-1-I-78"></use>')],
+    [
+      'a url() spelled with a CSS escape',
+      svgWith('<path fill="\\75rl(https://evil.example/p.svg#g)" d="M0 0"></path>'),
+    ],
+    ['a url() with one letter escaped', svgWith('<path stroke="u\\72l(#g)" d="M0 0"></path>')],
+    ['a url() to a fragment', svgWith('<path fill="url(#MJX-1-I-78)" d="M0 0"></path>')],
+    ['a CSS variable as a colour', svgWith('<path fill="var(--x)" d="M0 0"></path>')],
+    ['a src() as a colour', svgWith('<path stroke="src(x)" d="M0 0"></path>')],
+    ['a backslash in a path', svgWith('<path d="M0 0\\"></path>')],
+    ['a bracket in a length', svgWith('<rect width="calc(1px)" height="1"></rect>')],
+    ['a transform with something else in it', svgWith('<g transform="scale(1,-1) url(x)"></g>')],
+    ['a transform that nests a function', svgWith('<g transform="rotate(calc(1))"></g>')],
+    ['a style that covers the page', svgWith('<g style="position:fixed;top:0;left:0"></g>')],
+    ['a style that is no declaration', svgWith('<g style="vertical-align"></g>')],
+    ['a style value with a bracket', svgWith('<g style="font-family: a(b)"></g>')],
+  ])('nothing is left for CSS to interpret: %s', (_name, svg) => {
+    expect(svgProblem(svg)).not.toBeNull();
+  });
+
+  // A drawing stands on its own: it can't reach into the page it is placed in, take the name of
+  // something that page relies on, or multiply itself.
+  it.each([
+    ['a use that points at nothing', svgWith('<use href="#MJX-missing"></use>')],
+    [
+      'a use that points at a group, which could hold more uses',
+      svgWith('<g id="MJX-group"><path d="M0 0"></path></g><use href="#MJX-group"></use>'),
+    ],
+    [
+      'a reference on something that is not a use',
+      svgWith('<path href="#MJX-1-I-78" d="M0 0"></path>'),
+    ],
+    ['a reference to an empty fragment', svgWith('<use href="#"></use>')],
+    [
+      'a reference without the MathJax prefix',
+      svgWith('<path id="glyph" d="M0 0"></path><use href="#glyph"></use>'),
+    ],
+    ['an id a page might rely on', svgWith('<g id="config"></g>')],
+    ['an id used twice', svgWith('<path id="MJX-1-I-78" d="M0 0"></path>')],
+    ['elements nested 200 deep', svgWith('<g>'.repeat(200) + '</g>'.repeat(200))],
+    ['a root with no namespace', '<svg></svg>'],
+    [
+      'xlink:href with no xlink namespace declared',
+      '<svg xmlns="http://www.w3.org/2000/svg"><defs><path id="MJX-a" d="M0 0"></path></defs><use xlink:href="#MJX-a"></use></svg>',
+    ],
+    ['a null character', svgWith('<text>a\u0000b</text>')],
+    ['half of a surrogate pair', svgWith('<text>\uD800</text>')],
+    ['a reference to the null character', svgWith('<text>&#0;</text>')],
+    ['a reference to a surrogate', svgWith('<text>&#xD800;</text>')],
+    ['a reference past the last character', svgWith('<text>&#9999999;</text>')],
+  ])('a drawing stands on its own and is well formed: %s', (_name, svg) => {
+    expect(svgProblem(svg)).not.toBeNull();
+  });
+
+  it.each([
+    ['a reference to a shape in the drawing', svgWith('<use href="#MJX-1-I-78"></use>')],
     ['a self-closing element', svgWith('<path d="M0 0"/>')],
     ['single-quoted values', svgWith("<rect x='0' y='0' width='10' height='10'></rect>")],
     [
@@ -178,9 +233,14 @@ describe('rendered math', () => {
     ],
     [
       'a title and text with references',
-      svgWith('<title>x &lt; y &amp; y &gt; 0</title><text x="0" y="0">&#x3b1;</text>'),
+      svgWith('<title>x &lt; y &amp; y &gt; 0</title><text x="0" y="0">&#x3b1; &#946;</text>'),
     ],
     ['a named reference in a data attribute', svgWith('<g data-latex="a &amp; b"></g>')],
+    ['LaTeX source in a data attribute', svgWith('<g data-latex="\\frac{1}{2} (x)"></g>')],
+    [
+      'MathJax 4 accessibility attributes',
+      svgWith('<g aria-level="1" aria-roledescription="math"></g>'),
+    ],
     [
       'line breaks between attributes',
       svgWith('<path\n  d="M0 0"\n  fill="currentColor"\n></path>'),
@@ -189,8 +249,18 @@ describe('rendered math', () => {
       'tabs and carriage returns between attributes',
       svgWith('<path\td="M0 0"\r\n\tfill="none"></path>'),
     ],
-    ['spaces around an equals sign', svgWith('<g id = "x"></g>')],
+    ['spaces around an equals sign', svgWith('<g fill = "none"></g>')],
     ['a letter outside ASCII inside a quoted value', svgWith('<g aria-label="α\u00A0β"></g>')],
+    [
+      'hex and rgb colours',
+      svgWith('<path fill="#1a2b3c" stroke="rgb(255, 0, 0)" d="M0 0"></path>'),
+    ],
+    ['a list of transforms', svgWith('<g transform="translate(10, -20) scale(0.5)"></g>')],
+    [
+      'a style of text properties',
+      svgWith('<text style="font-family: serif; font-size: 12px;">x</text>'),
+    ],
+    ['128 levels of nesting', svgWith('<g>'.repeat(127) + '</g>'.repeat(127))],
     ['an empty drawing', '<svg xmlns="http://www.w3.org/2000/svg"></svg>'],
     ['a drawing closed in its own tag', '<svg xmlns="http://www.w3.org/2000/svg"/>'],
   ])('what the grammar describes passes: %s', (_name, svg) => {
@@ -242,6 +312,30 @@ describe('tokenized code', () => {
 
     expect(codeTokenKinds).not.toContain('decorator');
     expect(accepts(codeRenderingSchema, withNewKind)).toBe(true);
+  });
+
+  it('a language is one word, and a pair of language and source matches no other pair', () => {
+    const renderings: Renderings = {
+      media: [],
+      math: [],
+      code: [
+        {
+          language: 'js',
+          source: 'x\ny',
+          lines: [[{ text: 'x', kind: 'plain' }], [{ text: 'y', kind: 'plain' }]],
+        },
+      ],
+    };
+
+    expect(accepts(codeRenderingSchema, withValue(listing, 'language', 'py thon'))).toBe(false);
+    expect(accepts(codeRenderingSchema, withValue(listing, 'language', 'js\nx'))).toBe(false);
+    expect(accepts(codeRenderingSchema, withValue(listing, 'language', ''))).toBe(false);
+    expect(
+      codeRenderingOf({ type: 'code', language: 'js', source: 'x\ny' }, renderings),
+    ).toBeDefined();
+    expect(
+      codeRenderingOf({ type: 'code', language: 'js\nx', source: 'y' }, renderings),
+    ).toBeUndefined();
   });
 
   it('a kind is a lowercase word, not a colour or a class list', () => {
