@@ -99,21 +99,21 @@ A typed answer is graded by `quiz-engine` on the device and again on the server.
 
 **What it never forgives.** A digit, a decimal point, a thousands separator or a minus sign inside a number. A Roman numeral: "Henry VII" is wrong for "Henry VIII". Anything listed as `rejected`.
 
-**What it forgives unless told otherwise.** Typos, by the length of the answer: none up to 4 characters, one from 5 to 8, two from 9. Two neighboring letters swapped count as one.
+**What it can forgive, when a question allows it.** Typos, by the length of the answer: none up to 4 characters, one from 5 to 8, two from 9. Two neighboring letters swapped count as one. Left to itself, the engine allows them on every question.
 
 **The danger.** With typos allowed and nothing rejected, a different real answer one slip away is graded correct: Manet for Monet, Ireland for Iceland, Zambia for Gambia, Austria for Australia, ethanol for methanol, hypotension for hypertension, astrology for astronomy.
 
 ### The policy
 
-> **Decided by the owner on 2026-11-21 (EG-33).** The alternatives were exact for every typed answer, and typos allowed for every typed answer with near-misses listed each time.
+> **Decided by the owner on 2026-11-21 (EG-33): typed answers are exact by default.** The alternatives were exact only for the names of people and places, and typos allowed on every typed answer with near-misses listed each time.
 
 | ID | Rule |
 |---|---|
-| EG-33 | The default depends on the kind of answer. **The name of a person or a place is exact:** no typo is forgiven (`maxTypos: 0`). **A number** is never forgiven a typo; that is the engine's rule. **Anything else** (a thing, a term, the title of a work) allows typos by length, after the near-miss search of EG-36. |
-| EG-34 | Every typed text answer states its tolerance in the question file. Nothing is left to the engine's default, so a reviewer always sees the choice that was made. |
-| EG-35 | A person's or a place's name may allow typos only when all of these hold: it has nine or more characters; the author has compared it with the others of its kind (countries, capitals, people in the same field) and listed any within two changes as `rejected`; and the question file says that this was done. "Kilimanjaro" and "Tchaikovsky" qualify. "Australia" does not, because of Austria. |
-| EG-36 | Before allowing typos on any answer, search for real answers of the same kind within reach: one change for an answer of 5 to 8 characters, two changes from 9. List each as `rejected`. If there are more than two, make the answer exact or make the question a choice. |
-| EG-37 | List as `accepted` every form a player who knows the answer would type: the full name and the short one, both spellings, the abbreviation, the older name. The first entry is the one shown on reveal, so it is the full, correct, usual form. An answer holds at most 20 accepted and 20 rejected entries of 120 characters each. |
+| EG-33 | **A typed answer forgives no typo** unless its author switches tolerance on for that question. In the question file `maxTypos` is 0 unless the author sets it, and the pipeline always writes it into the key, so the engine's own default is never used. "Exact" still ignores everything in the first list above. A number is never forgiven a typo, whatever is set. |
+| EG-34 | An author may switch tolerance on, by setting `maxTypos` to 1 or 2, only when all of these hold: the answer has five or more characters; the author has searched for real answers of the same kind within reach, which is one change for an answer of 5 to 8 characters and two from 9; EG-35 doesn't forbid it; and the question file says the search was done. The engine still allows no more typos than the answer's length does. Tolerance is safe when the search finds nothing: "Kilimanjaro", "Tchaikovsky", "photosynthesis". |
+| EG-35 | Tolerance is never switched on for: the name of a person or a place that has a real near neighbor (Iceland and Ireland, Australia and Austria, Monet and Manet); an answer that contains a number; an answer with a single-letter or single-digit part (Vitamin A, Type O). Listing the neighbor as `rejected` doesn't make these safe. |
+| EG-36 | Wherever tolerance is on, every real answer within reach is listed as `rejected`: "ethanol" on "methanol", "hypotension" on "hypertension". The reviewer checks that list on every such question. If there are more than two, the answer stays exact. |
+| EG-37 | List as `accepted` every form a player who knows the answer would type: the full name and the short one, both spellings, the abbreviation, the older name. The first entry is the one shown on reveal, so it is the full, correct, usual form. List real variants, not misspellings: for a spelling that is hard, switch tolerance on under EG-34 or ask a choice question. An answer holds at most 20 accepted and 20 rejected entries of 120 characters each. |
 | EG-38 | The prompt says what form is wanted: "Which country…", "Give the surname", "Answer in meters". A player should never lose a point for answering a different question well. |
 | EG-39 | For a number, the prompt states the unit, and `units` lists every way to type it ("km", "kilometers", "kilometres"). `tolerance` is 0 unless the prompt says "about" or "to the nearest…". It is always 0 for a year or a count, and it never reaches as far as a plausible wrong answer. A number over five digits is asked "in thousands" or "in millions". |
 | EG-40 | Every typed question carries example answers: at least three that must be accepted and three that must be rejected, the near-misses among them. `content:validate` runs them through the real grader, so a reviewer checks the lists and doesn't simulate the engine by eye. |
@@ -124,17 +124,17 @@ Each check comes from a known limit of the engine (ADR 0021). The drafter applie
 
 | ID | Check | What the engine does | What to do |
 |---|---|---|---|
-| TA-01 | Is another real answer one slip away? | It grades a typo correct unless that typo is nearer to a `rejected` entry | Follow EG-33 to EG-36: make a name exact, list the near-misses |
-| TA-02 | Does one letter or digit tell this answer from its siblings (Vitamin A, Hepatitis B, Type O)? | A single letter is not protected, so "Vitamin A" passes for "Vitamin E". Only I, V, X, L, C, D and M are protected, as Roman numerals | Make it exact, or list every sibling as `rejected`. A choice question is usually better |
+| TA-01 | Is tolerance on, and is another real answer one slip away? | It grades a typo correct unless that typo is nearer to a `rejected` entry | Apply EG-34 to EG-36: list the near-misses as `rejected`, or leave the answer exact |
+| TA-02 | Does one letter or digit tell this answer from its siblings (Vitamin A, Hepatitis B, Type O)? | With tolerance on, a single letter is not protected, so "Vitamin A" passes for "Vitamin E". Only I, V, X, L, C, D and M are protected, as Roman numerals | Never switch tolerance on (EG-35). A choice question is usually better |
 | TA-03 | Does the answer contain a Roman numeral (Henry VIII, World War II, Rocky II)? | The numeral must match letter for letter, and "2" does not match "II" | Add the forms people type: "World War 2", "Second World War", "Henry the Eighth" |
 | TA-04 | Is one of its words also a valid Roman numeral (Liv, Xi, Li, Mix, DC, MC)? | That word allows no typo at all: "Lib Tyler" is wrong for "Liv Tyler" | Nothing to fix. Add any other usual spelling as an alias |
-| TA-05 | Does the name carry an initial (John D. Rockefeller, Samuel L. Jackson)? | The name without the initial may not match, and may match when it shouldn't: "George Bush" for "George W. Bush" | If the name without the initial is still this person, add it as an alias. If it could be someone else, list it as `rejected` |
+| TA-05 | Does the name carry an initial (John D. Rockefeller, Samuel L. Jackson)? | The name without the initial doesn't match. With tolerance on it can match when it shouldn't: "George Bush" passes for "George W. Bush" | If the name without the initial is still this person, add it as an alias. If it could be someone else, list it as `rejected` |
 | TA-06 | Does a text answer contain a number (20,000 Leagues Under the Sea)? | The number must be typed with the same separator: "20000 Leagues" does not match | Add aliases without the separator, with a space, and in words if people would write it so |
 | TA-07 | Does it contain "and" or "&"? | They don't match each other | List both |
 | TA-08 | Does it begin with an article that is part of the name (The Who, A-ha, The The)? | The article is dropped: "A-ha" is compared as "ha". A `rejected` entry that equals an accepted one without its article makes the right answer wrong | Never reject the article-less form. Add the run-together spelling ("Aha"). Put both in the must-accept examples |
 | TA-09 | Can the words come in another order (Beatles, The; Kim Yuna and Yuna Kim)? | Word order must match | List each order that is normal for this name |
 | TA-10 | Does it have another name, spelling or language (Kyiv and Kiev, Mumbai and Bombay, Munich and München, USA and United States)? | Only accents are folded; "Muenchen" and "Kiev" are different strings | List each form still in common use. Don't mark an older name wrong unless the question is about the name |
-| TA-11 | Is the answer exact, and is it written with a hyphen or a space (Spider-Man, ice cream)? | A hyphen equals a space, but the run-together form is one change away, and exact forgives none | Add the run-together form as an alias |
+| TA-11 | Is it written with a hyphen or a space (Spider-Man, ice cream)? | A hyphen equals a space, but the run-together form is one change away, and an exact answer forgives none | Add the run-together form as an alias |
 | TA-12 | Would a player type only the surname? | Only whole accepted entries match | Add the surname when it can mean no one else here. If it can ("Roosevelt"), ask for the full name in the prompt |
 | TA-13 | Number question: would a player type a symbol or a unit ($5, 5 km, 5%)? | Text with a digit must read as the number once a listed unit is removed. "$5" is wrong unless "$" is a unit, and so is "(5)" | List every unit and symbol a player might type, written without a full stop: "in" accepts "5 in" and "5 in.", but "in." accepts only "5 in." |
 | TA-14 | Number question: would a player type words (twelve, 1.5 million, a dozen)? | Words match only an accepted entry | Add the word forms as accepted entries. No typo is forgiven on "1.5 million" |
@@ -225,7 +225,7 @@ One question, in this order. Stop at the first failure.
 1. **Answer it yourself** before looking at the key. If you hesitate between two answers, or your answer isn't the key, it fails EG-07.
 2. **Read the fact-check record.** It was made by someone other than the drafter (EG-02), its result is "pass", and the quoted line supports the key as worded. Open the source yourself for a hard question, a number, a superlative, a living person, and at least one question in five of the rest.
 3. **Read the wrong answers.** Each is certainly wrong (EG-21), plausible (EG-22) and the same kind of thing (EG-23). Nothing gives the right one away (EG-24).
-4. **For a typed answer,** read the tolerance (EG-33, EG-34) and the accepted, rejected and example lists against checks TA-01 to TA-17. Type the answer the way you would on a phone.
+4. **For a typed answer,** confirm it is exact, or that tolerance is on within EG-34 to EG-36 with its near-misses rejected. Read the accepted, rejected and example lists against checks TA-01 to TA-17. Type the answer the way you would on a phone.
 5. **Read it as a player.** It is clear on first reading (EG-13, EG-14), within length (EG-20), and neutral (EG-46 to EG-51).
 6. **Read the explanation.** It states the answer, reads right after a wrong answer, and adds nothing unsourced (EG-41 to EG-43).
 7. **Check the labels.** Domain and topic (`taxonomy.md`), difficulty (EG-56), region tags (TX-11), the time-sensitive flag (EG-53), alt text (EG-60).
@@ -241,7 +241,7 @@ Then decide:
 A rule a tool can check should not depend on a reviewer's attention. These are requests to CT-02 (`content:validate`) and CMS-01 (the review tool). Each ticket's plan says how.
 
 - **Required on every question:** a domain and topic from `taxonomy.md`, a difficulty, a locale, at least one source, an explanation, alt text on every image, and the fact-check record with a checker who is not the drafter.
-- **Typed answers:** an explicit tolerance on every text answer (EG-34); the note EG-35 asks for when a person's or a place's name allows typos; the example answers of EG-40, run through the real grader.
+- **Typed answers:** `maxTypos` defaults to 0 in the file format and is always written into the key (EG-33); tolerance is refused where a tool can see that EG-35 applies (a digit, a single-letter part); the note EG-34 asks for wherever tolerance is on; the example answers of EG-40, run through the real grader.
 - **Lints for the reviewer,** from ADR 0021: an accepted answer within typo distance of another real answer, checked against lists of countries, capitals and elements and against the bank's other answers; a grouped number or an initial with no alias; an accepted number outside its tolerance; a rejected entry that equals an accepted one once articles are dropped; aliases that normalize alike; an ordering question with a tie.
 - **Lengths:** a warning past "aim for" and an error past "never over" (EG-20).
 - **Flags:** time-sensitive with its check-by date (EG-53); alcohol (EG-48); the image's licence and credit (EG-59).

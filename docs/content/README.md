@@ -20,7 +20,7 @@ Approving the pull request approves the defaults below. Each can be changed on i
 
 | # | Decision | Default in the drafts | Where |
 |---|---|---|---|
-| 1 | Typed answers: which forgive a typo | **Decided by the owner on 2026-11-21:** exact for the names of people and places; typos allowed elsewhere after a near-miss search | Guidelines EG-33 |
+| 1 | Typed answers: which forgive a typo | **Decided by the owner on 2026-11-21:** exact by default; an author switches typo tolerance on for a question only where it is safe | Guidelines EG-33 |
 | 2 | Who reviews, and how many hours a week (O-4) | Not set. The documents say "a named human reviewer" | Guidelines EG-03 |
 | 3 | Where content comes from, and on what licence (spec Q8) | Written in-house, by people or AI, from sources; nothing copied from another quiz product without a licence on record | Guidelines EG-04 |
 | 4 | Which sources are good enough | Tier A or B only; an encyclopedia anyone can edit is never the listed source | Checklist §2, guidelines EG-45 |
