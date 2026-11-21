@@ -8,6 +8,13 @@
 // string that gets drawn. Whatever this grammar doesn't describe is refused: a comment, a
 // doctype, an unquoted value, a tag name in the wrong case, a character reference in an
 // attribute. A formula whose markup needs more than this is a change to the lists below.
+//
+// One rule carries most of the weight: every `<` and every `>` in the string delimits a tag.
+// Neither may appear in text or inside an attribute's value, where they are written `&lt;` and
+// `&gt;`. So no reader, whatever state it is in, can find a tag that this grammar read as text
+// or as a value. That matters because a browser's HTML parser changes its rules inside `<title>`
+// and `<desc>`: those two hold text only here, and a value such as `</title><img onerror=…>`
+// can't be written at all.
 
 /** The longest rendered formula, in UTF-16 units. */
 export const maxSvgLength = 200_000;
@@ -91,18 +98,21 @@ const namespaces: Readonly<Record<string, string>> = {
   'xmlns:xlink': 'http://www.w3.org/1999/xlink',
 };
 
-/** Text between elements: any character but `<`, and `&` only as a whole reference. */
-const TEXT = /^(?:[^&]|&(?:amp|lt|gt|quot|apos|#[0-9]{1,7}|#x[0-9A-Fa-f]{1,6});)*$/;
+/** What a browser reads as HTML inside SVG. Here they describe the drawing in text and hold no element. */
+const textOnlyElements: readonly string[] = ['title', 'desc'];
 
-/** An attribute's value: `&` only as one of XML's five named references, never a numeric one. */
-const VALUE = /^(?:[^&]|&(?:amp|lt|gt|quot|apos);)*$/;
+/** Text between elements: no `<` or `>`, and `&` only as a whole reference. */
+const TEXT = /^(?:[^<>&]|&(?:amp|lt|gt|quot|apos|#[0-9]{1,7}|#x[0-9A-Fa-f]{1,6});)*$/;
+
+/** An attribute's value: no `<` or `>`, and `&` only as one of XML's five named references. */
+const VALUE = /^(?:[^<>&]|&(?:amp|lt|gt|quot|apos);)*$/;
 
 function attributeProblem(name: string, value: string): string | null {
   if (!allowedAttributes.includes(name) && !/^data-[a-z0-9-]+$/.test(name)) {
     return `The attribute "${name}" is not allowed.`;
   }
   if (!VALUE.test(value)) {
-    return `The attribute "${name}" holds a character reference other than &amp;, &lt;, &gt;, &quot; or &apos;.`;
+    return `The attribute "${name}" holds a "<", a ">" or a character reference other than &amp;, &lt;, &gt;, &quot; or &apos;.`;
   }
   if (/url\s*\(/i.test(value)) return `The attribute "${name}" holds a url().`;
 
@@ -162,8 +172,8 @@ function attributesOf(
 export function svgProblem(svg: string): string | null {
   if (svg.length > maxSvgLength) return 'It is too long.';
 
-  // A tag: `<name …>` or `</name>`, where `…` holds no `<` or `>` outside a quoted value.
-  const tag = /<(\/?)([A-Za-z][A-Za-z0-9]*)((?:[^<>"']|"[^"]*"|'[^']*')*)>/g;
+  // A tag: `<name …>` or `</name>`, where `…` holds no `<` or `>` at all, quoted or not.
+  const tag = /<(\/?)([A-Za-z][A-Za-z0-9]*)([^<>]*)>/g;
   const open: string[] = [];
   let rootClosed = false;
   let position = 0;
@@ -175,8 +185,9 @@ export function svgProblem(svg: string): string | null {
       if (open.length === 0) return 'It must start with <svg.';
       const next = svg.indexOf('<', position);
       const end = next === -1 ? svg.length : next;
-      if (!TEXT.test(svg.slice(position, end)))
-        return 'Its text holds a broken character reference.';
+      if (!TEXT.test(svg.slice(position, end))) {
+        return 'Its text holds a ">" or a broken character reference.';
+      }
       position = end;
       continue;
     }
@@ -196,6 +207,10 @@ export function svgProblem(svg: string): string | null {
       rootClosed = open.length === 0;
     } else {
       if (open.length === 0 && name !== 'svg') return 'It must be one <svg> element.';
+      const parent = open.at(-1);
+      if (parent !== undefined && textOnlyElements.includes(parent)) {
+        return `A <${parent}> holds text only.`;
+      }
       const attributes = attributesOf(rest);
       if ('problem' in attributes) return attributes.problem;
       if (!attributes.selfClosing) open.push(name);

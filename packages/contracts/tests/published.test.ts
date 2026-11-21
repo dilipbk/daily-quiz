@@ -133,6 +133,19 @@ describe('rendered math', () => {
     ['a bracket inside a tag', svgWith('<path d="M0 0" <g>></path>')],
     ['a second root', `${mathJaxSvg}${mathJaxSvg}`],
     ['a root that is not svg', '<g></g>'],
+    // A browser reads <title> and <desc> as HTML, where a second <title> swallows what follows
+    // as text and ends at the first </title>, wherever this grammar thought that was.
+    [
+      'markup hidden in a value inside a title',
+      svgWith(
+        '<title><title><g data-x="</title><img src=x onerror=alert(1)>"></g></title></title>',
+      ),
+    ],
+    ['an element inside a title', svgWith('<title><g></g></title>')],
+    ['a title inside a description', svgWith('<desc><title>x</title></desc>')],
+    ['a bracket in a value', svgWith('<g data-latex="a > b"></g>')],
+    ['a closing tag in a value', svgWith('<g data-latex="</g>"></g>')],
+    ['a bracket in text', svgWith('<text>a > b</text>')],
   ])('what the grammar does not describe is refused: %s', (_name, svg) => {
     expect(svgProblem(svg)).not.toBeNull();
     expect(accepts(mathRenderingSchema, { ...formula, svg })).toBe(false);
