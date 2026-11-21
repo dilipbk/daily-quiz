@@ -5,7 +5,9 @@
   "description": "zod schemas, endpoint registry, error codes, fixtures and the fake server.",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./fixtures": "./src/fixtures/index.ts",
+    "./openapi": "./src/openapi.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit && tsc --noEmit -p tests/node"

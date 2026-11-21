@@ -50,3 +50,105 @@ export type {
   QueryOf,
   ResponseOf,
 } from './endpoint.ts';
+
+export { endpointList, endpoints, sharedSchemas } from './endpoints.ts';
+
+export {
+  dailyGoalTierSchema,
+  gameRulesSchema,
+  playModeSchema,
+  sessionSourceSchema,
+} from './rules.ts';
+export type { DailyGoalTier, GameRules, PlayMode, SessionSource } from './rules.ts';
+
+export { maxSvgLength, svgProblem } from './svg.ts';
+
+export {
+  assetOf,
+  audioAssetSchema,
+  codeRenderingOf,
+  codeRenderingSchema,
+  codeTokenKinds,
+  imageAssetSchema,
+  mathRenderingOf,
+  mathRenderingSchema,
+  mediaAssetSchema,
+  renderingsSchema,
+  unrenderedBlocks,
+} from './published.ts';
+export type {
+  AudioAsset,
+  CodeRendering,
+  CodeTokenKind,
+  ImageAsset,
+  MathRendering,
+  MediaAsset,
+  Renderings,
+} from './published.ts';
+
+export {
+  maxSessionQuestions,
+  playerQuestionItemSchema,
+  questionSetSchema,
+  sessionQuestionSchema,
+  sessionRulesSchema,
+  toPlayerQuestionItem,
+} from './questions.ts';
+export type {
+  PlayerQuestionItem,
+  QuestionSet,
+  SessionQuestion,
+  SessionRules,
+} from './questions.ts';
+
+export { configSchema } from './areas/config.ts';
+export type { Config } from './areas/config.ts';
+
+export {
+  deviceParamsSchema,
+  deviceSchema,
+  guestRequestSchema,
+  guestResponseSchema,
+  playerSchema,
+  updatePlayerSchema,
+} from './areas/identity.ts';
+export type {
+  Device,
+  GuestRequest,
+  GuestResponse,
+  Player,
+  UpdatePlayer,
+} from './areas/identity.ts';
+
+export {
+  domainSchema,
+  domainsSchema,
+  quizPageSchema,
+  quizParamsSchema,
+  quizSchema,
+  quizzesQuerySchema,
+} from './areas/content.ts';
+export type { Domain, Domains, Quiz, QuizPage } from './areas/content.ts';
+
+export { dailySetSchema, globalSetParamsSchema } from './areas/dailies.ts';
+export type { DailySet } from './areas/dailies.ts';
+
+export { progressQuerySchema, progressSchema, streakStatusSchema } from './areas/progress.ts';
+export type { Progress, StreakStatus } from './areas/progress.ts';
+
+export {
+  completionResultSchema,
+  completionSchema,
+  createSessionSchema,
+  sessionEvaluationSchema,
+  sessionItemsOf,
+  sessionParamsSchema,
+  sessionSchema,
+} from './areas/sessions.ts';
+export type {
+  Completion,
+  CompletionResult,
+  CreateSession,
+  Session,
+  SessionItemsResult,
+} from './areas/sessions.ts';
