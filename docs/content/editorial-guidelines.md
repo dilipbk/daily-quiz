@@ -105,7 +105,7 @@ A typed answer is graded by `quiz-engine` on the device and again on the server.
 
 ### The policy
 
-> **Owner decision (EG-33).** This table is the PM's recommendation. The alternatives are exact for every typed answer, or typos allowed for every typed answer with near-misses listed each time.
+> **Decided by the owner on 2026-11-21 (EG-33).** The alternatives were exact for every typed answer, and typos allowed for every typed answer with near-misses listed each time.
 
 | ID | Rule |
 |---|---|
