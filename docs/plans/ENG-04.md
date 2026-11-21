@@ -26,7 +26,14 @@ The plan below is as approved. These are the places where what was built differs
 4. **Tasks 6 and 7 are one commit.** The public-API test and the package's third entry point need the generator to exist.
 5. **The generator doesn't refuse a transform** (Task 7). On the input side zod writes a transform as its input. A `Date` or a `bigint` still throws. The no-transform rule is held by `tests/fixtures.test.ts` instead: every fixture comes back unchanged.
 6. **`problemOf(code, extras)` was added to `errors.ts`,** so the API, the fake server and the fixtures build a problem from the catalogue one way.
-7. **Tests and code for Tasks 2 to 7 were written together, not red first.** To show the tests bite, ten rules were then broken one at a time (a level step of zero, an optional offset, fractional time, a keyless item that isn't strict, `script` allowed in math, a 3.0 document, a completion with no idempotency key, a result off by one point, a tolerant request, a strict response). A test failed for each.
+7. **An independent review of the branch led to a second round of changes** (after Task 7). A reviewer with no part in the build fuzzed the SVG grammar against Chromium and read the contracts and the generator. It found no way to run script, and these faults, all fixed:
+   - `svgProblem` took up to 90 seconds on 200,000 characters. It is now a single pass, and `tests/node/svg-speed.test.ts` holds fourteen worst cases under half a second.
+   - A CSS escape spelled `url(` in a `fill`; strings that are not well-formed XML passed; a `<use>` could point at a group or at nothing. The grammar now refuses backslashes and brackets, requires the namespaces, and lets a `<use>` point only at a shape in the same drawing.
+   - `gameRulesSchema` was strict inside a response, so one new rule would have cost an older app its whole config. It is tolerant now, and `configCoreSchema` reads the minimum version and the flags when the tunables won't parse.
+   - `GET /me/progress` took a zone with no offset; a number in a query string was read too loosely (`0x10`, `true`); a timestamp had many spellings. Fixed with `queryIntegerSchema` and millisecond precision.
+   - Two fixtures disagreed with each other (a ten-question quiz with a two-question session; a player created after their own session).
+   - The generator let a duplicate id, an ambiguous route, a schema under two names and a 204 with a body through. It throws on each now.
+8. **Tests and code for Tasks 2 to 7 were written together, not red first.** To show the tests bite, ten rules were then broken one at a time (a level step of zero, an optional offset, fractional time, a keyless item that isn't strict, `script` allowed in math, a 3.0 document, a completion with no idempotency key, a result off by one point, a tolerant request, a strict response). A test failed for each.
 
 ## Context
 
