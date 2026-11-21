@@ -2,6 +2,7 @@ import { blockLimits } from '@repo/content-blocks';
 import type { Block, CodeBlock, MathBlock } from '@repo/content-blocks';
 import * as z from 'zod';
 import { httpsUrlSchema, idSchema } from './primitives.ts';
+import { svgProblem } from './svg.ts';
 
 // The published forms of content (spec §11.3, ADR 0022). An author writes blocks: a math block
 // is LaTeX, a code block is source, an image block is an asset id. Publishing renders each one
@@ -63,39 +64,11 @@ export const mediaAssetSchema = z.discriminatedUnion('kind', [imageAssetSchema, 
 
 // Math
 
-/** The longest rendered formula, in UTF-16 units. */
-export const maxSvgLength = 200_000;
-
-const svgRefusals: readonly { readonly pattern: RegExp; readonly reason: string }[] = [
-  {
-    pattern:
-      /<\s*\/?\s*(?:script|foreignobject|iframe|object|embed|image|style|a|audio|video|set|animate\w*)\b/i,
-    reason: 'It holds an element that can run code, load a file or link away.',
-  },
-  { pattern: /<[!?]/, reason: 'It holds a doctype, a comment, CDATA or a processing instruction.' },
-  { pattern: /\son\w+\s*=/i, reason: 'It holds an event-handler attribute.' },
-  { pattern: /\ssrc\s*=/i, reason: 'It holds a src attribute.' },
-  // A reference may point only inside the same drawing, as MathJax's <use href="#…"> does.
-  { pattern: /href\s*=\s*(?!["']#)/i, reason: 'It holds a reference to something outside itself.' },
-  { pattern: /url\s*\(\s*(?!["']?#)/i, reason: 'It holds a url() to something outside itself.' },
-];
-
 /**
- * Why a string is refused as rendered math, or `null` when it passes.
- *
- * This is a guard, not a sanitizer. The SVG comes from our own publish pipeline, and a device
- * draws it as vector shapes, never as a web page; the guard is there so that a fault upstream
- * can't put markup that runs or fetches in front of a player (SEC-08). It errs on the strict
- * side: a formula whose text spells one of these patterns is refused too.
+ * One `<svg>` element in the small grammar of `./svg.ts`: shapes and text only, with nothing that
+ * runs, loads, links or styles (SEC-08). The SVG comes from our own publish pipeline; the grammar
+ * is there so that a fault upstream can't put active markup in front of a player.
  */
-export function svgProblem(svg: string): string | null {
-  if (svg.length > maxSvgLength) return 'It is too long.';
-  if (!/^<svg[\s>]/.test(svg) || !svg.endsWith('</svg>')) {
-    return 'It must be one <svg> element, with nothing before or after it.';
-  }
-  return svgRefusals.find(({ pattern }) => pattern.test(svg))?.reason ?? null;
-}
-
 const svgSchema = z.string().superRefine((value, context) => {
   const problem = svgProblem(value);
   if (problem !== null) context.addIssue({ code: 'custom', message: problem });

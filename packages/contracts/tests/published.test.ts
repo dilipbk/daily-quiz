@@ -9,12 +9,11 @@ import {
   imageAssetSchema,
   mathRenderingOf,
   mathRenderingSchema,
-  maxSvgLength,
   renderingsSchema,
-  svgProblem,
   unrenderedBlocks,
 } from '../src/published.ts';
 import type { Renderings } from '../src/published.ts';
+import { maxSvgLength, svgProblem } from '../src/svg.ts';
 import { accepts, withValue, without } from './support.ts';
 
 // The published forms of content (spec §11.3, ADR 0022): rendered math, tokenized code and media
@@ -108,12 +107,60 @@ describe('rendered math', () => {
     expect(accepts(mathRenderingSchema, { ...formula, svg })).toBe(false);
   });
 
-  it('a reference inside the drawing and a url() to a fragment pass', () => {
-    expect(svgProblem(svgWith('<use href="#MJX-1-I-78"></use>'))).toBeNull();
-    expect(svgProblem(svgWith('<path fill="url(#gradient)" d="M0 0"></path>'))).toBeNull();
-    expect(
-      svgProblem(svgWith('<path style="fill:url(\'#gradient\')" d="M0 0"></path>')),
-    ).toBeNull();
+  // Each of these slips past a list of forbidden patterns; a list of what is allowed stops them.
+  it.each([
+    ['a slash where a space would be', svgWith('<path/onload="alert(1)" d="M0 0"></path>')],
+    ['a namespaced element', svgWith('<svg:script>alert(1)</svg:script>')],
+    ['an element in the wrong case', svgWith('<Path d="M0 0"></Path>')],
+    ['an element outside the list', svgWith('<clipPath id="c"></clipPath>')],
+    ['an attribute outside the list', svgWith('<path tabindex="0" d="M0 0"></path>')],
+    ['a numeric reference in an attribute', svgWith('<use href="&#x23;MJX-1-I-78"></use>')],
+    ['a numeric reference in a path', svgWith('<path d="&#77;0 0"></path>')],
+    ['an unknown named reference', svgWith('<path d="M0 0" id="&nbsp;"></path>')],
+    ['a broken reference in text', svgWith('<text>a & b</text>')],
+    ['an attribute given twice', svgWith('<use href="#a" href="#b"></use>')],
+    ['a reference to an empty fragment', svgWith('<use href="#"></use>')],
+    ['a url() to a fragment', svgWith('<path fill="url(#gradient)" d="M0 0"></path>')],
+    ['a style with brackets', svgWith('<path style="width:calc(1px)" d="M0 0"></path>')],
+    ['a style with an escape', svgWith('<path style="fill:\\75rl" d="M0 0"></path>')],
+    [
+      'another namespace',
+      mathJaxSvg.replace('http://www.w3.org/2000/svg', 'http://evil.example/ns'),
+    ],
+    ['elements that cross', svgWith('<g><text>x</g></text>')],
+    ['an element left open', svgWith('<g>')],
+    ['a closing tag with an attribute', svgWith('<g></g id="x">')],
+    ['a bracket inside a tag', svgWith('<path d="M0 0" <g>></path>')],
+    ['a second root', `${mathJaxSvg}${mathJaxSvg}`],
+    ['a root that is not svg', '<g></g>'],
+  ])('what the grammar does not describe is refused: %s', (_name, svg) => {
+    expect(svgProblem(svg)).not.toBeNull();
+    expect(accepts(mathRenderingSchema, { ...formula, svg })).toBe(false);
+  });
+
+  it.each([
+    ['a reference inside the drawing', svgWith('<use href="#MJX-1-I-78"></use>')],
+    ['a self-closing element', svgWith('<path d="M0 0"/>')],
+    ['single-quoted values', svgWith("<rect x='0' y='0' width='10' height='10'></rect>")],
+    [
+      'a nested svg, as MathJax draws stretched brackets',
+      svgWith(
+        '<svg x="0" y="0" width="10" height="10" viewBox="0 0 10 10"><path d="M0 0"></path></svg>',
+      ),
+    ],
+    [
+      'a title and text with references',
+      svgWith('<title>x &lt; y &amp; y &gt; 0</title><text x="0" y="0">&#x3b1;</text>'),
+    ],
+    ['a named reference in a data attribute', svgWith('<g data-latex="a &amp; b"></g>')],
+    [
+      'line breaks between attributes',
+      svgWith('<path\n  d="M0 0"\n  fill="currentColor"\n></path>'),
+    ],
+    ['an empty drawing', '<svg xmlns="http://www.w3.org/2000/svg"></svg>'],
+    ['a drawing closed in its own tag', '<svg xmlns="http://www.w3.org/2000/svg"/>'],
+  ])('what the grammar describes passes: %s', (_name, svg) => {
+    expect(svgProblem(svg)).toBeNull();
   });
 
   it('a drawing longer than the cap is refused', () => {
