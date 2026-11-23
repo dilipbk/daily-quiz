@@ -45,7 +45,7 @@ Every requirement the spec marks for the MVP, and the ticket or tickets in `docs
 | ONB-04 | Apple, Google, email magic link | BE-16, FE-11 | todo |
 | ONB-05 | Guest upgrade keeps progress | BE-16, FE-11 | todo |
 | ONB-06 | Neutral age screen; under 13 can't proceed | BE-10, FE-10 | todo |
-| ONB-07 | Username check and filter; basic avatar | BE-17, FE-11 | todo |
+| ONB-07 | Generated username; username check and filter; basic avatar | BE-17, FE-11 | todo |
 | ONB-08 | New device restores progress | BE-16, FE-11 | todo |
 | ONB-09 | Account deletion in the app | BE-17, FE-11 | todo |
 | EXP-01 | Explore: search, chips, category grid, collections | FE-14, CT-05 | todo |
@@ -62,7 +62,7 @@ Every requirement the spec marks for the MVP, and the ticket or tickets in `docs
 | PLAY-07 | Leave confirmation; resume | FE-03, FE-15 | todo |
 | QT-01 | Question types as registry modules | ENG-02, FE-04 | todo |
 | QT-02 | Deterministic graders on shared fixtures | ENG-02 | built |
-| QT-03 | `type_answer` normalization | ENG-02 | built |
+| QT-03 | `type_answer` normalization; exact by default | ENG-02, CT-02 | todo |
 | QT-04 | Rich content blocks everywhere | ENG-01, FE-04 | todo |
 | QT-05 | Keyboard and screen-reader operation | FE-04 | todo |
 | RES-01 | Results sequence | FE-12 | todo |
