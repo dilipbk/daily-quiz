@@ -7,7 +7,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "start": "node src/main.ts api",
-    "migrate": "node src/main.ts migrate"
+    "migrate": "node src/main.ts migrate",
+    "smoke": "node smoke/smoke.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.11",

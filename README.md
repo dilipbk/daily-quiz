@@ -27,12 +27,25 @@ Use `pnpm`, `pnpm exec` and `pnpm dlx` at the repository root. `npm` and `npx` r
 | `pnpm format`    | Rewrite files with Prettier (`pnpm format:check` only reports)                      |
 | `pnpm test`      | Every package's tests, once (`pnpm exec vitest` watches)                            |
 
+## Run the API locally
+
+Docker is needed for this section only; `pnpm verify` never uses it. From the repository root:
+
+| Command                                                   | What it does                                                                                                                                                                                                                          |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm --filter @repo/api smoke`                           | Builds the API image, checks its Node and time-zone data, runs the migration step against Postgres in its failure and success cases, starts the API, probes `/health`, stops it with SIGTERM and tears it all down. CI runs the same. |
+| `docker compose -f apps/api/compose.yaml up --build`      | Postgres, then the migrations, then the API at http://127.0.0.1:3000/health. `docker compose -f apps/api/compose.yaml down` removes them.                                                                                             |
+| `docker build -f apps/api/Dockerfile -t daily-quiz-api .` | The image alone. It starts as the API, or runs the migrations: `docker run daily-quiz-api migrate`.                                                                                                                                   |
+| `pnpm --filter @repo/api start`                           | The API on your machine, without Docker or a database, on `PORT` (3000 by default).                                                                                                                                                   |
+
+The API reads its settings from the environment; [`.env.example`](.env.example) lists them. The image is described in ADR 0079 and the migration step in ADR 0080.
+
 ## Layout
 
 ```
 apps/
   mobile/            Expo app: iOS, Android, web share and marketing pages   (FND-05)
-  api/               Hono API and worker                                     (FND-07)
+  api/               Hono API and worker                                     (FND-07a)
   admin/             React Admin console                                     (CMS-01)
 packages/
   contracts/         zod schemas, endpoint registry, error codes, fixtures, fake server
@@ -71,6 +84,8 @@ The `apps/` folders arrive with the tickets shown. Apps depend on packages; pack
 ## CI
 
 Every pull request runs `pnpm verify` and checks its commit messages ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)). The job is named `verify`, and the ruleset on `main` requires it: a failing typecheck, lint rule, format check or test blocks the merge.
+
+A second job, `api-smoke`, runs the API smoke script (see [Run the API locally](#run-the-api-locally)) on every pull request and on `main`. It isn't a required check yet.
 
 `main` takes changes through pull requests only. A branch must be up to date with `main` before it merges, and `main` can't be force-pushed or deleted.
 
