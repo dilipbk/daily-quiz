@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@repo/config": "workspace:*",
+    "@repo/game-rules": "workspace:*",
     "@seriousme/openapi-schema-validator": "^2.12.0",
     "ajv": "^8.20.0"
   }
