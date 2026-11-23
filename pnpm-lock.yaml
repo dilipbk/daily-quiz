@@ -94,6 +94,9 @@ importers:
       '@repo/config':
         specifier: workspace:*
         version: link:../config
+      '@repo/game-rules':
+        specifier: workspace:*
+        version: link:../game-rules
       '@seriousme/openapi-schema-validator':
         specifier: ^2.12.0
         version: 2.12.0

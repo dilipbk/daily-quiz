@@ -10,8 +10,9 @@ import * as z from 'zod';
 // the kill switches and the minimum version among it, still parses.
 //
 // The shapes follow `GameRules`, `SessionSource`, `PlayMode` and `DailyGoalTier` in
-// packages/game-rules/src (ADR 0004). They are written out because that package can't be
-// imported from this branch; ADR 0024 records the follow-up that ties the two together.
+// packages/game-rules/src (ADR 0004). They are written out because that package exports them as
+// types and a schema is a value. tests/game-rules-parity.test.ts stops the type check when a
+// shape here and its original differ; this file is then the one to change.
 
 /** Where a session's questions came from. */
 export const sessionSourceSchema = z.enum(['global_daily', 'daily_5', 'quiz', 'challenge']);
