@@ -47,3 +47,30 @@ jobs:
         run: pnpm exec commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
 
       - run: pnpm verify
+
+  api-smoke:
+    # Builds the API image and runs apps/api/smoke/smoke.ts, the script the laptop runs too
+    # (FND-07a, ADR 0079, ADR 0080). Not a required check yet: the ruleset gains it once it is
+    # green on `main`. It needs no secret, so a pull request from a fork runs it the same way.
+    name: api-smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      HUSKY: 0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Reads the pnpm version from `packageManager` in package.json.
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      # The smoke compares the image's Node with this one, read from `devEngines.runtime`.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter @repo/api smoke

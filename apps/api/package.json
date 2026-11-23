@@ -1,0 +1,24 @@
+{
+  "name": "@repo/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The Hono API and its container: GET /health, the migrate command and the smoke script.",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "start": "node src/main.ts api",
+    "migrate": "node src/main.ts migrate",
+    "smoke": "node smoke/smoke.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.11",
+    "@repo/game-rules": "workspace:*",
+    "hono": "^4.13.20",
+    "node-pg-migrate": "^9.0.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@repo/config": "workspace:*",
+    "@types/pg": "^8.23.1"
+  }
+}

@@ -1,0 +1,59 @@
+# Postgres, the migration step and the API, for a local run and for the smoke script
+# (apps/api/smoke/smoke.ts). From the repository root:
+#   docker compose -f apps/api/compose.yaml up --build
+# The credentials here are local throwaways for a database that lives in memory and is never
+# published outside Docker. No real secret lives in the repository (SEC-01).
+name: daily-quiz-api
+
+x-api-image: &api-image
+  image: ${API_IMAGE:-daily-quiz-api}
+  build:
+    context: ../..
+    dockerfile: apps/api/Dockerfile
+    args:
+      GIT_COMMIT: ${GIT_COMMIT:-}
+
+services:
+  postgres:
+    # Neon's default major for new projects (ADR 0080). postgres:18.7-trixie, digest checked 2026-11-23.
+    image: postgres:18.7-trixie@sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      # Over TCP: the server the image runs on a socket alone during first-time setup isn't ready.
+      test: ['CMD', 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres', '-d', 'app']
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    <<: *api-image
+    command: ['migrate']
+    environment:
+      MIGRATION_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/app?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *api-image
+    environment:
+      PORT: '3000'
+    ports:
+      - '127.0.0.1:${API_HOST_PORT:-3000}:3000'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    # The order the platform keeps too (FND-07b): migrations finish before the API starts.
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
