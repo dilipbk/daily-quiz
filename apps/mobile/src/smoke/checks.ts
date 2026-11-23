@@ -119,8 +119,9 @@ const frameworkChecks: readonly Check[] = [
     platforms: native,
     run: async () => {
       const DevClient = await import('expo-dev-client');
-      // Registering no items still reaches the dev menu's native module in a development
-      // build. A release build leaves the dev client out, and the call does nothing there.
+      // A release build leaves the dev client's native module out, and its calls throw
+      // ("Cannot read property 'addDevMenuCallbacks' of null"), so only the import is proven there.
+      if (!__DEV__) return 'imported; not part of a release build';
       await DevClient.registerDevMenuItems([]);
       return 'registered an empty dev-menu list';
     },
