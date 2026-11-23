@@ -1,7 +1,9 @@
 // The image's entry point: `node apps/api/src/main.ts <command>` (ADR 0079). Node is started
 // directly, so it is PID 1 and receives the platform's stop signal itself.
+import { fileURLToPath } from 'node:url';
 import { createApp } from './app.ts';
 import { ConfigError, readCommit, readPort } from './env.ts';
+import { runMigrate } from './migrate.ts';
 import { SHUTDOWN_DEADLINE_MS, startServer, stopOnSignals } from './server.ts';
 
 const log = (line: string): void => {
@@ -21,8 +23,14 @@ async function api(): Promise<void> {
   });
 }
 
+// Runs before new machines take traffic (FND-07b), from the same image (ADR 0080).
+async function migrate(): Promise<void> {
+  const dir = fileURLToPath(new URL('../migrations', import.meta.url));
+  process.exitCode = await runMigrate({ env: process.env, dir, log });
+}
+
 // One image, one process type per command (ADR 0051). `worker` arrives with the first job ticket.
-const commands: Readonly<Record<string, () => Promise<void>>> = { api };
+const commands: Readonly<Record<string, () => Promise<void>>> = { api, migrate };
 
 const name = process.argv[2] ?? '';
 const command = Object.hasOwn(commands, name) ? commands[name] : undefined;

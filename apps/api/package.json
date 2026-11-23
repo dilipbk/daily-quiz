@@ -6,14 +6,18 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "start": "node src/main.ts api"
+    "start": "node src/main.ts api",
+    "migrate": "node src/main.ts migrate"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.11",
     "@repo/game-rules": "workspace:*",
-    "hono": "^4.13.20"
+    "hono": "^4.13.20",
+    "node-pg-migrate": "^9.0.0",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
-    "@repo/config": "workspace:*"
+    "@repo/config": "workspace:*",
+    "@types/pg": "^8.23.1"
   }
 }
