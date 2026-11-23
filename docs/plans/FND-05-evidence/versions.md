@@ -1,8 +1,35 @@
 # FND-05: resolved versions
 
-Generated on 2026-11-23 from `pnpm-lock.yaml` with `pnpm --filter @repo/mobile ls --depth 0 --json`. "Declared" is the range in `apps/mobile/package.json`; "Resolved" is what the lockfile installs, and what the release builds and the web export of 2026-11-23 were made from.
+Generated on 2026-11-23 from `pnpm-lock.yaml` with `pnpm --filter @repo/mobile ls --depth 0 --json`. "Declared" is the range in `apps/mobile/package.json`; "Resolved" is what the lockfile installs. The release builds and the web export of 2026-11-23 were made from exactly these.
 
-The development builds of 2026-11-15 differ in three packages: `expo-web-browser` 58.0.8 (Expo has since moved its pin), and Better Auth 1.7.25 and i18next 27.1.2, which pnpm's one-day minimum release age rejected (ADR 0006). They also predate the two workspace packages.
+## What moved since the builds of 2026-11-15
+
+Merge commit `2e9e7cc` brought `main` into the branch on 2026-11-23. Its lockfile was regenerated with `pnpm install` (on the PM's instruction, instead of resolving the conflict by hand), which let every range take its newest version. 18 direct dependencies moved, and two workspace packages were added afterwards (`@repo/game-rules`, `@repo/quiz-engine`).
+
+The development builds of 2026-11-15 were made from the left-hand column, with two further differences: they bundled Better Auth 1.7.25 and i18next 27.1.2, which were replaced the same day because pnpm's minimum release age rejected them (ADR 0006).
+
+| Package | 2026-11-15 | 2026-11-23 |
+|---|---|---|
+| `@expo/ui` | 58.0.28 | 58.0.29 |
+| `@formatjs/intl-locale` | 5.4.3 | 5.5.0 |
+| `@formatjs/intl-pluralrules` | 7.0.4 | 7.1.0 |
+| `@sentry/react-native` | 8.28.0 | 8.28.1 |
+| `@tanstack/query-async-storage-persister` | 5.107.1 | 5.108.2 |
+| `@tanstack/react-query` | 5.107.1 | 5.108.2 |
+| `@tanstack/react-query-persist-client` | 5.107.1 | 5.108.2 |
+| `babel-preset-expo` | 58.0.25 | 58.0.26 |
+| `expo` | 58.0.25 | 58.0.26 |
+| `expo-dev-client` | 58.0.20 | 58.0.21 |
+| `expo-file-system` | 58.0.13 | 58.0.14 |
+| `expo-router` | 58.0.31 | 58.0.32 |
+| `expo-web-browser` | 58.0.8 | 58.1.0 |
+| `i18next` | 27.1.1 | 27.2.4 |
+| `i18next-icu` | 2.7.0 | 2.7.1 |
+| `intl-messageformat` | 12.1.5 | 12.2.0 |
+| `jest-expo` | 58.0.14 | 58.0.15 |
+| `react-i18next` | 18.0.1 | 18.0.3 |
+
+`expo-web-browser` moved because Expo changed its pin; the rest moved inside their declared ranges. A package is held to one version only where "Declared" has no `^` or `~`; every other row is a range, and the next `pnpm install` that regenerates the lockfile may move it again.
 
 ## Dependencies
 
