@@ -74,6 +74,18 @@ const runtimeChecks: readonly Check[] = [
     run: async () => (await import('./hermes-probes')).probeDateTimeFormat(),
   },
   {
+    id: 'game-rules-local-date',
+    label: 'game-rules localDateOf: offsets, DST days, unknown zones (ENG-03)',
+    platforms: everywhere,
+    run: async () => (await import('./hermes-probes')).probeLocalDates(),
+  },
+  {
+    id: 'quiz-engine-fixtures',
+    label: 'quiz-engine shared fixtures (ENG-02)',
+    platforms: everywhere,
+    run: async () => (await import('./hermes-probes')).probeSharedFixtures(),
+  },
+  {
     id: 'zod',
     label: 'zod 4',
     platforms: everywhere,

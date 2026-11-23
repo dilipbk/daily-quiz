@@ -1,3 +1,7 @@
+import { localDateOf } from '@repo/game-rules';
+import { runSharedFixtures } from '@repo/quiz-engine/fixtures';
+import { z } from 'zod';
+
 // Language features the shared packages (content-blocks, quiz-engine) rely on. Their tests
 // run on V8, the app runs on Hermes, so each feature is evaluated here on the device.
 // The regular expressions are literals on purpose: that is how the packages write them.
@@ -40,9 +44,7 @@ export function probeNormalize(): string {
   return "'é' in NFD has length 2";
 }
 
-export async function probeZod(): Promise<string> {
-  const { z } = await import('zod');
-
+export function probeZod(): string {
   const choice = z.strictObject({ type: z.literal('choice'), options: z.array(z.string()).min(2) });
   const numeric = z.strictObject({ type: z.literal('numeric'), answer: z.number() });
   const question = z.discriminatedUnion('type', [choice, numeric]);
@@ -76,4 +78,63 @@ export function probeDateTimeFormat(): string {
     throw new Error(`${actual}; expected 01/02/2026 and 12/31/2025`);
   }
   return actual;
+}
+
+const utc = (year: number, month: number, day: number, hour: number, minute: number): number =>
+  Date.UTC(year, month - 1, day, hour, minute);
+
+// What game-rules needs from the runtime's Intl (ADR 0005), through its own `localDateOf`:
+// a 45-minute offset, the +14:00 zone, and the minute on each side of local midnight on the
+// days Los Angeles changes its clocks in 2026. Expected values are what Node 26.13.1 gives.
+const localDateCases: readonly (readonly [zone: string, instant: number, expected: string])[] = [
+  ['Asia/Kathmandu', utc(2026, 1, 1, 18, 30), '2026-01-02'],
+  ['Pacific/Kiritimati', utc(2026, 6, 15, 10, 30), '2026-06-16'],
+  ['America/Los_Angeles', utc(2026, 3, 8, 7, 59), '2026-03-07'],
+  ['America/Los_Angeles', utc(2026, 3, 8, 8, 0), '2026-03-08'],
+  ['America/Los_Angeles', utc(2026, 3, 9, 6, 59), '2026-03-08'],
+  ['America/Los_Angeles', utc(2026, 3, 9, 7, 0), '2026-03-09'],
+  ['America/Los_Angeles', utc(2026, 11, 1, 6, 59), '2026-10-31'],
+  ['America/Los_Angeles', utc(2026, 11, 1, 7, 0), '2026-11-01'],
+  ['America/Los_Angeles', utc(2026, 11, 2, 7, 59), '2026-11-01'],
+  ['America/Los_Angeles', utc(2026, 11, 2, 8, 0), '2026-11-02'],
+];
+
+const thrownName = (act: () => unknown): string => {
+  try {
+    return `returned ${String(act())}`;
+  } catch (thrown) {
+    return thrown instanceof Error ? thrown.name : typeof thrown;
+  }
+};
+
+export function probeLocalDates(): string {
+  const actual = localDateCases.map(([zone, instant]) =>
+    thrownName(() => localDateOf(instant, zone)).replace(/^returned /, ''),
+  );
+  const unknownZone = thrownName(() => localDateOf(utc(2026, 1, 1, 0, 0), 'Mars/Olympus_Mons'));
+  const emptyZone = thrownName(() => localDateOf(utc(2026, 1, 1, 0, 0), ''));
+  const report = `${actual.join(' ')}; unknown zone: ${unknownZone}; empty zone: ${emptyZone}`;
+
+  const wrong = localDateCases.filter(([, , expected], index) => actual[index] !== expected);
+  if (wrong.length > 0 || unknownZone !== 'RangeError' || emptyZone !== 'RangeError') {
+    const expected = localDateCases.map(([, , date]) => date).join(' ');
+    throw new Error(`${report}; expected ${expected} and RangeError twice`);
+  }
+  return report;
+}
+
+/** Every fixture the app and the server share (QT-02), graded and scored by the engine itself. */
+export function probeSharedFixtures(): string {
+  const { ran, failures } = runSharedFixtures();
+
+  if (failures.length > 0) {
+    const listed = failures
+      .map(
+        ({ id, expected, actual }) =>
+          `${id}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+      )
+      .join('; ');
+    throw new Error(`${String(failures.length)} of ${String(ran)} fixtures failed. ${listed}`);
+  }
+  return `${String(ran)} fixtures ran, 0 failed`;
 }
