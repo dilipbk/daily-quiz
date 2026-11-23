@@ -1,0 +1,56 @@
+[smoke] android: 54 pass, 0 fail, 1 skipped
+[smoke] pass | JavaScript engine | Hermes
+[smoke] pass | Unicode property escapes (regex literals, u flag) | \p{L} \p{M} \p{Z} \p{Cc} \p{Cf} \p{Cs}
+[smoke] pass | Object.hasOwn | own key true, inherited key false
+[smoke] pass | Array.prototype.at | at(-1) is 'c'
+[smoke] pass | String.prototype.normalize (NFD) | 'é' in NFD has length 2
+[smoke] pass | Intl.DateTimeFormat with a time zone | Kathmandu 01/02/2026, Los Angeles 12/31/2025; Intl with an unknown zone: RangeError; with an empty zone: RangeError
+[smoke] pass | game-rules localDateOf: offsets, DST days, unknown zones (ENG-03) | 2026-01-01 2026-01-02 2026-06-16 2026-03-07 2026-03-08 2026-03-08 2026-03-09 2026-10-31 2026-11-01 2026-11-01 2026-11-02; unknown zone: RangeError; empty zone: RangeError
+[smoke] pass | quiz-engine shared fixtures (ENG-02) | 127 fixtures ran, 0 failed
+[smoke] pass | zod 4 | strictObject and discriminatedUnion accept valid, reject invalid
+[smoke] pass | Expo SDK and React Native | SDK 58.0.0, React Native 0.88.1
+[smoke] pass | expo-dev-client | imported; not part of a release build
+[smoke] pass | Expo Router with NativeTabs | NativeTabs loaded
+[smoke] pass | @expo/ui | Host loaded
+[smoke] pass | expo-symbols | SymbolView loaded
+[smoke] pass | expo-glass-effect | liquid glass available: false
+[smoke] pass | Unistyles | theme: light
+[smoke] pass | Nitro Modules | Nitro 0.37.1, release build
+[smoke] pass | Reanimated | Reanimated 4.7.1
+[smoke] pass | Worklets (UI runtime) | a worklet ran on the UI thread
+[smoke] pass | Gesture Handler | GestureDetector loaded
+[smoke] pass | Skia | created a paint
+[smoke] pass | react-native-svg | Svg loaded
+[smoke] pass | FlashList | FlashList loaded
+[smoke] pass | XState | presenting → revealing
+[smoke] pass | Zustand | store updated
+[smoke] pass | MMKV | wrote and read a key
+[smoke] pass | TanStack Query persisted to MMKV | cache written to MMKV
+[smoke] pass | expo-secure-store | available: true
+[smoke] pass | i18next with ICU, expo-localization | 1 question, 5 questions; device locale en-US; PluralRules polyfilled
+[smoke] pass | expo-haptics | selection haptic sent
+[smoke] pass | expo-audio | created and released a player (volume 1)
+[smoke] pass | expo-image | Image loaded
+[smoke] pass | expo-video | picture in picture supported: true
+[smoke] pass | expo-sharing | available: true
+[smoke] pass | expo-notifications | permission: denied
+[smoke] pass | expo-updates | enabled: false, runtime version not reported
+[smoke] pass | expo-web-browser | 1 Custom Tabs browsers found
+[smoke] skipped | expo-apple-authentication | not on android
+[smoke] pass | Google sign-in | linked; signed in before: false
+[smoke] pass | Better Auth Expo client | auth client loaded
+[smoke] pass | PostHog | constructed, disabled: true
+[smoke] pass | Sentry | SDK 8.28.1, native module linked, not initialised
+[smoke] pass | expo-crypto | random UUID of 36 characters
+[smoke] pass | expo-network | network type: WIFI
+[smoke] pass | expo-device | model: sdk_gphone64_arm64
+[smoke] pass | expo-application | application id: dev.dailyquiz.shell
+[smoke] pass | expo-file-system | wrote, read and deleted a file
+[smoke] pass | expo-linking | app URL: dailyquiz:///
+[smoke] pass | expo-font | a font that was never loaded is loaded: false
+[smoke] pass | expo-asset | bundled icon is a png asset
+[smoke] pass | expo-system-ui | root background: #fafafa
+[smoke] pass | expo-splash-screen | hide requested
+[smoke] pass | react-native-safe-area-context | top inset at launch: 24
+[smoke] pass | @xstate/react (imported only: its hooks need a component) | useMachine loaded
+[smoke] pass | react-i18next (imported only: its hooks need a component) | useTranslation loaded

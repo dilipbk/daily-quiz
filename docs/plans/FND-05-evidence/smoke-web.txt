@@ -1,0 +1,56 @@
+[smoke] web: 41 pass, 0 fail, 14 skipped
+[smoke] pass | JavaScript engine | browser engine
+[smoke] pass | Unicode property escapes (regex literals, u flag) | \p{L} \p{M} \p{Z} \p{Cc} \p{Cf} \p{Cs}
+[smoke] pass | Object.hasOwn | own key true, inherited key false
+[smoke] pass | Array.prototype.at | at(-1) is 'c'
+[smoke] pass | String.prototype.normalize (NFD) | 'é' in NFD has length 2
+[smoke] pass | Intl.DateTimeFormat with a time zone | Kathmandu 01/02/2026, Los Angeles 12/31/2025; Intl with an unknown zone: RangeError; with an empty zone: RangeError
+[smoke] pass | game-rules localDateOf: offsets, DST days, unknown zones (ENG-03) | 2026-01-01 2026-01-02 2026-06-16 2026-03-07 2026-03-08 2026-03-08 2026-03-09 2026-10-31 2026-11-01 2026-11-01 2026-11-02; unknown zone: RangeError; empty zone: RangeError
+[smoke] pass | quiz-engine shared fixtures (ENG-02) | 127 fixtures ran, 0 failed
+[smoke] pass | zod 4 | strictObject and discriminatedUnion accept valid, reject invalid
+[smoke] pass | Expo SDK and React Native | SDK 58.0.0
+[smoke] skipped | expo-dev-client | not on web
+[smoke] pass | Expo Router with NativeTabs | NativeTabs loaded
+[smoke] pass | @expo/ui | Host loaded
+[smoke] pass | expo-symbols | SymbolView loaded
+[smoke] pass | expo-glass-effect | liquid glass available: false
+[smoke] pass | Unistyles | theme: dark
+[smoke] skipped | Nitro Modules | not on web
+[smoke] pass | Reanimated | Reanimated 4.7.1
+[smoke] skipped | Worklets (UI runtime) | not on web
+[smoke] pass | Gesture Handler | GestureDetector loaded
+[smoke] pass | Skia | created a paint
+[smoke] pass | react-native-svg | Svg loaded
+[smoke] pass | FlashList | FlashList loaded
+[smoke] pass | XState | presenting → revealing
+[smoke] pass | Zustand | store updated
+[smoke] pass | MMKV | wrote and read a key
+[smoke] pass | TanStack Query persisted to MMKV | cache written to MMKV
+[smoke] skipped | expo-secure-store | not on web
+[smoke] pass | i18next with ICU, expo-localization | 1 question, 5 questions; device locale en-US; PluralRules built in
+[smoke] skipped | expo-haptics | not on web
+[smoke] pass | expo-audio | created and released a player (volume 1)
+[smoke] pass | expo-image | Image loaded
+[smoke] pass | expo-video | VideoView loaded
+[smoke] pass | expo-sharing | available: true
+[smoke] skipped | expo-notifications | not on web
+[smoke] pass | expo-updates | enabled: true, runtime version not reported
+[smoke] pass | expo-web-browser | openBrowserAsync loaded
+[smoke] skipped | expo-apple-authentication | not on web
+[smoke] skipped | Google sign-in | not on web
+[smoke] skipped | Better Auth Expo client | not on web
+[smoke] pass | PostHog | constructed, disabled: true
+[smoke] pass | Sentry | SDK 8.28.1, not initialised
+[smoke] pass | expo-crypto | random UUID of 36 characters
+[smoke] pass | expo-network | network type: UNKNOWN
+[smoke] pass | expo-device | model: Macintosh
+[smoke] skipped | expo-application | not on web
+[smoke] skipped | expo-file-system | not on web
+[smoke] pass | expo-linking | app URL: http://localhost:8090
+[smoke] pass | expo-font | a font that was never loaded is loaded: false
+[smoke] pass | expo-asset | bundled icon is a png asset
+[smoke] skipped | expo-system-ui | not on web
+[smoke] skipped | expo-splash-screen | not on web
+[smoke] skipped | react-native-safe-area-context | not on web
+[smoke] pass | @xstate/react (imported only: its hooks need a component) | useMachine loaded
+[smoke] pass | react-i18next (imported only: its hooks need a component) | useTranslation loaded

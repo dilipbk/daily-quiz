@@ -5,3 +5,11 @@ packages:
 # One range per shared library, so packages that exchange its values can't drift apart.
 catalog:
   zod: ^4.6.7
+
+# Install scripts are off unless listed here (pnpm 11). Neither of these is needed yet:
+# @sentry/cli only downloads the binary that uploads source maps, which waits for the
+# Sentry account (FND-05's EAS half, ADR 0006); @parcel/watcher ships prebuilt binaries
+# and its script only compiles a fallback.
+allowBuilds:
+  '@parcel/watcher': false
+  '@sentry/cli': false

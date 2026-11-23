@@ -18,3 +18,12 @@ coverage/
 
 # Tool caches
 .impeccable/hook.cache.json
+
+# Expo: caches, generated types and the native projects `expo prebuild` generates (ADR 0007)
+.expo/
+expo-env.d.ts
+apps/mobile/ios/
+apps/mobile/android/
+
+# Skia's CanvasKit build for web, copied from node_modules by `setup-skia-web`
+apps/mobile/public/canvaskit.wasm
