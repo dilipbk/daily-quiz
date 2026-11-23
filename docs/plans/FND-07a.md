@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Ticket:** FND-07a (the local half of roadmap row FND-07, split on 2026-11-23) · **Status:** PLAN FOR APPROVAL · **Owner:** backend engineer · **Size:** M, confirmed: one new app (`apps/api`), one new CI job, and one line in `vitest.config.js`. It changes no schema and no contract, and it carries no auth, money or privacy risk. It becomes L only if D1 puts `/health` into `packages/contracts`.
+**Ticket:** FND-07a (the local half of roadmap row FND-07, split on 2026-11-23) · **Status:** APPROVED by the PM on 2026-11-23, D1 to D6 as recommended, section 2 standing · **Owner:** backend engineer · **Size:** M, confirmed: one new app (`apps/api`), one new CI job, and one line in `vitest.config.js`. It changes no schema and no contract, and it carries no auth, money or privacy risk. It becomes L only if D1 puts `/health` into `packages/contracts`.
 
 **Goal:** One container image of `@repo/api` that a laptop and CI build with one command. It answers `GET /health` as a non-root user, stops cleanly on SIGTERM and runs a `migrate` step. One smoke script proves all of this on every pull request, with no account and no secret.
 
@@ -15,6 +15,22 @@
 **Research notes** (sources quoted, checked 2026-11-23), in this group's shared notes folder: `fnd-07a-research-node-image-pnpm-ci.md` and `fnd-07a-research-hono-postgres-migrations.md`.
 
 **Branch:** `chore/FND-07a-api-container-local`, cut from `origin/main` at `95b6fd9`.
+
+---
+
+## Changes during the build
+
+The plan below is as approved. These are the places where what was built differs from it.
+
+1. **The PM's rulings are in the ADRs.**
+   - ADR 0079 states the `/health` exception as covering operations probes only, not product routes. It also carries the three "never" rules and names the smoke step that catches a break.
+   - ADR 0080 says it fills a gap and supersedes nothing, and that ADR 0054's "move to 1.0" is about the builder's version.
+   - `main.ts` dispatches from a table of commands, so `worker` is one more entry.
+2. **The stop needed a second step** (Task 2). The test `lets a request already in flight finish before it stops` failed against `server.close()` alone. It returned `forced` after 4 s, because a keep-alive connection that carried a request when the stop began turned idle after `close()` had already dropped the idle ones. `startServer` now closes idle connections each time a response finishes while stopping.
+3. **The broken-migration case leaves node-pg-migrate's history table** (Task 5, step 5). The table is created before the run's transaction, so the step asserts that no `smoke_` table remains and that the table records no migration.
+4. **The smoke's command helper is `run`, not `exec`.** Every command is a program with an argument array and no shell. The new name keeps it from being mistaken for `child_process.exec`.
+5. **`pnpm verify` without Docker was proven with a `docker` shim, not by stopping Docker Desktop.** The shim records any call and `DOCKER_HOST` points nowhere. Verify passed with no call recorded, and other sessions' containers kept running.
+6. **ADR 0080 adds a note for BE-02:** start a concurrent-index migration with `DROP INDEX CONCURRENTLY IF EXISTS`, because a failed concurrent build leaves an invalid index. Where it rests on node-pg-migrate's source and wasn't tested here, the ADR says so.
 
 ---
 
