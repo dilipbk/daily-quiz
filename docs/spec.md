@@ -2,18 +2,19 @@
 
 | | |
 |---|---|
-| **Version** | 1.0 (draft) |
-| **Date** | 2026-09-27 |
-| **Status** | Ready for foundation work (design system, prototype, app skeleton) |
-| **Scope** | Mobile app (iOS and Android) and web share pages. The backend appears here only as a contract (§19); it is built as a separate project. |
+| **Version** | 1.1 |
+| **Date** | 2026-11-23 |
+| **Status** | Amended to roadmap v1.1, its accepted ADRs, and the `Proposed` ADRs 0002, 0003, 0004, 0008, 0020, 0021 (R3 only), 0022 and 0024, which the roadmap's FND-06 row and the PM's brief and review direct, for the owner's approval. Version 1.0 was dated 2026-09-27; Appendix D lists what changed. |
+| **Scope** | The mobile app (iOS and Android), the web share and marketing pages, the API and the admin console, built together in one pnpm monorepo. The API's contract is §19. |
 | **Replaces** | "Quiz App Brainstorming and Analysis" (PDF) |
-| **Working title** | TBD |
+| **Working title** | Decided in DS-01 with the owner, with a trademark check before any store upload (ADR 0077). Builds use a placeholder identifier until then. |
 
 **Conventions**
 - **must** = required for the phase. **should** = strongly recommended. **may** = optional.
-- **Phases:** **P0** foundations, **MVP**, **V1**, **V2**, **V3** (see §22).
-- Values marked *(tunable)* are served by remote config so they can change without a release. A change applies to quizzes that start after it arrives; a running or resumed quiz keeps the values it started with (ADR 0012).
+- **Phases:** **P0** foundations, **MVP**, **V1**, **V2**, **V3** (see §22). The calendar for P0 and the MVP is `docs/roadmap.md` §5.
+- Values marked *(tunable)* are served by remote config so they can change without a release. A change applies to quizzes that start after it arrives; a running or resumed quiz keeps the values it started with.
 - Requirement IDs (for example `DLY-01`) are stable. Reference them in tickets, commits and tests.
+- ADR numbers refer to `docs/adr/` in this repository. Where the roadmap and the spec disagree, the roadmap's §3.3 wins (`CLAUDE.md`).
 
 ---
 
@@ -37,7 +38,7 @@
 16. [Offline and sync](#16-offline-and-sync)
 17. [Security, integrity, privacy and compliance](#17-security-integrity-privacy-and-compliance)
 18. [App architecture and tech stack](#18-app-architecture-and-tech-stack)
-19. [Backend contract (assumptions)](#19-backend-contract-assumptions)
+19. [Backend contract](#19-backend-contract)
 20. [Analytics and experimentation](#20-analytics-and-experimentation)
 21. [Quality, testing and release](#21-quality-testing-and-release)
 22. [Roadmap and phase gates](#22-roadmap-and-phase-gates)
@@ -47,6 +48,7 @@
 - [Appendix A: Glossary](#appendix-a-glossary)
 - [Appendix B: Corrections to the original brainstorm](#appendix-b-corrections-to-the-original-brainstorm)
 - [Appendix C: Sources](#appendix-c-sources)
+- [Appendix D: Changes in version 1.1](#appendix-d-changes-in-version-11)
 
 ---
 
@@ -56,9 +58,9 @@
 |---|---|---|
 | D1 | **The audience is horizontal**: anyone curious, including students, cooks, scientists and trivia fans. | The owner wants broad appeal. The wedge is the **daily loop and format**, not a niche. |
 | D2 | **Minimum age is 13+** at launch. | Avoids COPPA-level obligations and a kids mode while the social features take shape. |
-| D3 | **Mobile first (iOS and Android) from one Expo codebase.** The web is limited to shareable quiz/challenge pages and marketing; an internal admin console comes later. There is no full web mirror and no separate Next.js app. | Expo Router covers web from the same codebase. A full web copy doubles the work for little retention gain. |
-| D4 | **Use Expo SDK 57 now and upgrade to SDK 58 when it is stable.** | SDK 58 stabilizes NativeTabs and Router data loaders/SSR. |
-| D5 | **The backend is a separate, later project** (TypeScript **Hono** plus **Postgres**). The app is built against a shared **contracts** package, with mocks. | This keeps the app from being blocked, and Hono's typed client shares types with the app. |
+| D3 | **Mobile first (iOS and Android) from one Expo codebase.** The web is limited to shareable quiz/challenge pages and marketing, plus an internal admin console (§7.14). There is no full web mirror and no separate Next.js app. | Expo Router covers web from the same codebase. A full web copy doubles the work for little retention gain. |
+| D4 | **Start on Expo SDK 58** (amended in 1.1, ADR 0030). Version 1.0 said to start on SDK 57 and move to 58 once it was stable. | SDK 58 has been stable since 2026-10-15. It stabilizes NativeTabs and Router data loaders/SSR. |
+| D5 | **The API is built now, in this monorepo** (TypeScript **Hono** plus **Postgres**), contract first: every endpoint is a zod schema in the shared **contracts** package before the API or the app implements it (amended in 1.1, ADR 0072). Version 1.0 made the backend a separate, later project. | Streaks, XP and results are server-authoritative, so the daily loop can't be trusted until the server exists. The app, the API and the fake server parse with the same schemas. Running costs start in Phase 0 (roadmap §8). |
 | D6 | **Retention is the backbone of the product**: Global Daily, Daily 5, streaks, weekly leagues and async challenges. | The owner's top goal is daily return. |
 | D7 | **Launch with curated content.** Private creator tools arrive in V1 and public user-generated content (UGC) in V2. | UGC needs moderation and an audience first. A horizontal audience makes creators important early. |
 | D8 | **No DMs, forums or free-text chat.** Social features use challenges, preset emotes and reactions. | These carry the highest moderation cost and child-safety risk. |
@@ -184,10 +186,10 @@ These are tie-breakers, in priority order.
 | DLY-01 | One Global Daily set per calendar date: 8 questions *(tunable)*, identical for every user, spanning ≥ 5 domains, ordered easy → hard (3 easy / 3 medium / 2 hard *(tunable)*). | MVP |
 | DLY-02 | Unlocks at 00:00 in the user's local time zone. The set for date D is the same everywhere. | MVP |
 | DLY-03 | One scored attempt per day. After completion, it may be replayed in practice mode with no XP. | MVP |
-| DLY-04 | The Today card has four states: **available**; **in progress** (the answers so far and **Continue**, until the end of the daily's date; ADR 0010); **completed** (score, result grid, friends' results from V1); **next unlock** (countdown). | MVP |
+| DLY-04 | The Today card has four states: **available**; **in progress** (the answers so far and **Continue**, until the end of the daily's date; §10.6); **completed** (score, result grid, friends' results from V1); **next unlock** (countdown). | MVP |
 | DLY-05 | Completion produces a spoiler-free share card: a branded **image** (score, result grid, category colors) and a **text** version (symbol grid plus link). | MVP |
 | DLY-06 | After completion, show the global percentile (MVP) and friends' scores (V1). There is no global Daily leaderboard. | MVP / V1 |
-| DLY-07 | Today's and tomorrow's sets are prefetched for offline play (§16, ADR 0011). | MVP |
+| DLY-07 | Today's and tomorrow's sets are prefetched for offline play (§16). | MVP |
 | DLY-08 | Global Daily uses only editorially reviewed questions: never unreviewed UGC, never unreviewed AI output. | MVP |
 
 ### 6.2 Daily 5 (`D5`)
@@ -201,23 +203,35 @@ These are tie-breakers, in priority order.
 
 | ID | Requirement | Phase |
 |---|---|---|
-| STK-01 | The streak increments once per local calendar day when the user completes a qualifying session: either daily set, or any quiz of ≥ 5 questions. | MVP |
+| STK-01 | The streak increments once per local calendar day when the user completes a qualifying session: either daily set, or any other session of ≥ 5 questions *(tunable)*, challenges included. A Practice replay never qualifies, and the score doesn't matter. | MVP |
 | STK-02 | The server is authoritative for streak state. The client updates optimistically and reconciles. | MVP |
-| STK-03 | The day boundary is the user's local time zone at the qualifying action. Time-zone changes are credited at most once per 24 h, to prevent abuse. DST transitions must never break a streak. | MVP |
-| STK-04 | **Streak freeze:** applied automatically on a missed day; hold up to 2 *(tunable)*. Earned at milestones (MVP); bought with coins or included in Premium (V1). | MVP / V1 |
+| STK-03 | The day boundary is the user's local time zone at the qualifying action: a session is credited to the calendar date in the device's IANA time zone at the instant it completes, and to nothing else. There is no limit on time-zone changes (ADR 0003). DST transitions must never break a streak. | MVP |
+| STK-04 | **Streak freeze:** applied automatically on a missed day; hold up to 2 *(tunable)*. Earned at milestones, one per milestone *(tunable)* (MVP); bought with coins or included in Premium (V1). | MVP / V1 |
 | STK-05 | **Streak repair:** within 48 h of a break, once per 30 days *(tunable)*, for coins or as a Premium perk. | V1 |
 | STK-06 | Milestones (3, 7, 14, 30, 50, 100, 365 days) trigger a celebration and a badge. | MVP |
 | STK-07 | A streak calendar screen shows history, freezes used, and current and best streak. | V1 |
 | STK-08 | **Friend streaks:** two friends who both play on the same day keep a shared streak. | V2 |
 
+**Streak rules** (ADR 0004; every number is *(tunable)*):
+- **The day credited** is the local date when the session completes, not when it started (STK-03, OFF-04).
+- **Freezes earned:** each milestone of STK-06 grants one. A grant while holding the maximum is lost. A new player holds none. After a break, the new streak's milestones grant again.
+- **Freezes spent:** a freeze covers a missed day as soon as that day is over, and two held cover two days in a row. Freezes spent before a break stay spent.
+- **A frozen day** keeps the streak alive and doesn't add to its count.
+- **Late syncs:** the streak derives from the set of credited dates, so the order in which sessions arrive can't change it. If a missed day's session syncs later, the whole history is replayed with that day credited. The replay usually gives back the freeze that day had spent, but it can also change what followed, and the result can be lower than before.
+- **Best streak** is stored as a high-water mark, and a milestone once celebrated is never withdrawn (roadmap BE-06). The longest streak in a later replay can come out lower than the stored value.
+
 ### 6.4 XP, levels, daily goal (`XP`)
 
 | ID | Requirement | Phase |
 |---|---|---|
-| XP-01 | XP is status: it is earned and never spent. Formula: 10 per completed quiz + 2 per correct answer + 10 perfect-score bonus *(tunable)*. | MVP |
-| XP-02 | Levels follow an increasing XP curve *(tunable)*. Reaching a new level triggers a celebration. | MVP |
-| XP-03 | The daily goal is user-selected (Casual / Regular / Serious = 20 / 50 / 100 XP *(tunable)*) and shown as a ring on Today. | MVP |
-| XP-04 | XP from unsynced offline sessions is capped per day *(tunable)* until validated (§10.1). | MVP |
+| XP-01 | XP is status: it is earned and never spent. Formula: 10 per completed session of any source + 2 per correct answer + 10 when every answer is correct *(tunable)*. Relaxed earns the same. | MVP |
+| XP-02 | Levels follow an increasing XP curve: going from level L to L+1 costs 20 × L XP *(tunable)*, with no top level. Reaching a new level triggers a celebration. | MVP |
+| XP-03 | The daily goal is user-selected (Casual / Regular / Serious = 20 / 50 / 100 XP *(tunable)*) and shown as a ring on Today. The ring counts all XP credited to the local day, whatever mode earned it. | MVP |
+| XP-04 | XP from sessions still in the outbox adds at most 100 *(tunable)* to a local day in the app's optimistic total. The server's total replaces it once they are validated (§10.1). | MVP |
+
+**XP rules** (ADR 0004):
+- Reaching level L takes 20 × L × (L − 1) / 2 XP. Level 2 arrives at 20 XP (a first Global Daily with five right), level 5 at 200, level 10 at 900 and level 20 at 3,800.
+- **Practice:** a replayed daily earns none (DLY-03). Any other Practice replay earns half the formula, rounded down *(tunable)* (PLAY-02).
 
 ### 6.5 Weekly leagues (`LGE`)
 
@@ -280,9 +294,11 @@ These are tie-breakers, in priority order.
 | ONB-04 | Sign-in options: Sign in with Apple, Google, and email (magic link). Passkeys arrive in V1. | MVP |
 | ONB-05 | Upgrading a guest to an account keeps all progress. | MVP |
 | ONB-06 | A neutral age screen (birth year) appears in onboarding. Users under 13 can't proceed. | MVP |
-| ONB-07 | Username selection includes an availability check and a content filter. A basic avatar builder is included. | MVP |
+| ONB-07 | Every player starts with a generated username. Choosing one includes an availability check and a content filter (ADR 0062). A basic avatar builder is included. | MVP |
 | ONB-08 | Signing in on a new device restores streak, XP, settings and badges. | MVP |
 | ONB-09 | **Account deletion is available in the app** (Settings), with confirmation and a clear statement of consequences. | MVP |
+
+ONB-06 is unchanged in 1.1 (ADR 0076). The open question is for counsel: whether a self-declared birth year is enough for a 13+ app with usernames under the new age-assurance laws for apps, or whether the platforms' age signals (`expo-age-range`) must be added (Q10, roadmap O-7).
 
 ### 7.2 Explore and discovery (`EXP`)
 
@@ -302,12 +318,12 @@ These are tie-breakers, in priority order.
 | ID | Requirement | Phase |
 |---|---|---|
 | PLAY-01 | Quiz detail shows title, cover, domain/topic, question count, estimated duration, difficulty, question types, creator and rating. Primary action: **Play**. Secondary: **Challenge a friend**. | MVP |
-| PLAY-02 | Play modes: **Standard** (timed, the default), **Relaxed** (untimed, no speed bonus, full XP) and **Practice** (a replay of a completed quiz, with reduced XP *(tunable)*). | MVP |
+| PLAY-02 | Play modes: **Standard** (timed, the default), **Relaxed** (untimed, no speed bonus, full XP) and **Practice** (a replay of a completed quiz: half XP, rounded down *(tunable)*; a replayed daily earns none, DLY-03). | MVP |
 | PLAY-03 | Sessions follow §10: state machine, timing, interruption handling and scoring. | MVP |
 | PLAY-04 | Lifelines (50/50, skip, +10 s) work in casual modes only. They are disabled in dailies, challenges and live events. | V1 |
 | PLAY-05 | A question can be reported from its explanation step (wrong answer, unclear, offensive, other). | MVP |
 | PLAY-06 | Every question has an explanation: why the answer is right, plus source link(s). | MVP |
-| PLAY-07 | Leaving mid-quiz asks for confirmation. Progress in non-competitive modes is kept for resuming. The Global Daily counts as non-competitive here: leaving keeps the attempt until the end of its date (ADR 0010). | MVP |
+| PLAY-07 | Leaving mid-quiz asks for confirmation. Progress in non-competitive modes is kept for resuming. The Global Daily counts as non-competitive here: leaving keeps the attempt until the end of its date (§10.6). | MVP |
 
 ### 7.4 Question types (`QT`)
 
@@ -330,9 +346,9 @@ These are tie-breakers, in priority order.
 
 | ID | Requirement | Phase |
 |---|---|---|
-| QT-01 | Each question type is a **registry module** containing: schema (zod), renderer, **grader** (a pure function shared with the server), accessibility behavior, editor form and analytics payload. Adding a type requires **no change** to the session engine. | MVP |
+| QT-01 | Each question type is a **registry module** in `quiz-engine`: its zod schemas (payload, key and response) and its **grader**, a pure function shared with the server (ADR 0020). The app's renderers are a map keyed by the type, so a type with no renderer fails the build (roadmap FE-04). Each type also has accessibility behavior, an editor form and an analytics payload. Adding a type requires **no change** to the session engine. | MVP |
 | QT-02 | Graders are deterministic. They are unit-tested against shared fixtures that the app and the server both run. | MVP |
-| QT-03 | `type_answer` normalization handles case, diacritics, whitespace, punctuation, leading articles (locale-aware), accepted aliases, numeric tolerance, and typo tolerance scaled to answer length *(tunable)*. | MVP |
+| QT-03 | `type_answer` normalization handles case, diacritics, whitespace, punctuation, leading articles (locale-aware), accepted aliases and numeric tolerance. A typed answer is exact by default: it forgives no typo unless the question's author switches tolerance on for that question. Where it is on, the number of typos allowed scales with the answer's length *(tunable)*, and a number is never forgiven one (`docs/content/editorial-guidelines.md`, EG-33 to EG-36). | MVP |
 | QT-04 | Every type supports rich content blocks (§11.3) in the prompt, the options and the explanation. | MVP |
 | QT-05 | Every type can be operated with a hardware keyboard (tablets and web) and with a screen reader. | MVP |
 
@@ -344,7 +360,7 @@ These are tie-breakers, in priority order.
 | RES-02 | Actions: **Next quiz** (primary, to keep momentum), Review answers, Share, Challenge a friend. | MVP |
 | RES-03 | The review shows every question with the user's answer, the correct answer, the explanation, sources and a Report option. | MVP |
 | RES-04 | The store review prompt appears only after positive moments (7-day streak, perfect score) and respects platform limits. | V1 |
-| RES-05 | If results are waiting to sync, show a subtle pending indicator, on the results and on Today's daily card (ADR 0011). Never block the user. | MVP |
+| RES-05 | If results are waiting to sync, show a subtle pending indicator, on the results and on Today's daily card (OFF-03). Never block the user. | MVP |
 
 ### 7.6 Profile and stats (`PRF`)
 
@@ -450,7 +466,7 @@ These are tie-breakers, in priority order.
 
 ### 7.14 Admin console (`ADM`)
 
-The admin console belongs to the backend project. It is listed here so the app's dependencies are explicit.
+The admin console is `apps/admin`: a React Admin single-page app on the same API, built in this monorepo beside the app (ADR 0068).
 
 | ID | Requirement | Phase |
 |---|---|---|
@@ -551,7 +567,7 @@ Modules are ordered by urgency. Modules with nothing to show collapse.
 3. **Global Daily card:** in one of the DLY-04 states.
 4. **Daily 5 card.**
 5. **Daily goal ring.**
-6. **Continue:** resume an interrupted session other than the Global Daily, such as an Explore quiz or the Daily 5, once those exist. An unfinished Global Daily shows as Continue on its own card instead (DLY-04, ADR 0010).
+6. **Continue:** resume an interrupted session other than the Global Daily, such as an Explore quiz or the Daily 5. An unfinished Global Daily shows as Continue on its own card instead (DLY-04).
 7. **League mini-status** (V1) and **event banner** (V2).
 
 ### 9.2 Quiz session
@@ -577,7 +593,7 @@ Modules are ordered by urgency. Modules with nothing to show collapse.
 ```
 
 - **Timer** (timed modes): the ring in the top bar shows the seconds; a full-width bar under the top bar burns down
-  with it, and both turn to the warning color in the last 5 s. A 3-2-1 intro covers the first question (ADR 0009).
+  with it, and both turn to the warning color in the last 5 s. A 3-2-1 intro covers the first question (§10.2).
 - **Result card:** after the reveal, the explanation card replaces the answers and **Next** is pinned under it. A long
   card scrolls above Next and never pushes it off the screen (A11Y-03).
 - **Tablet, landscape:** the question zone sits on the left and the answer zone on the right.
@@ -609,15 +625,16 @@ As specified in EXP-01 to EXP-06. The category grid uses each category's color a
 
 | Source | Grading | Tier | Playable offline |
 |---|---|---|---|
-| Standard or Relaxed quiz, Practice | On device | B | Yes |
-| Global Daily, Daily 5 | On device, validated by the server | B | Yes (prefetched) |
-| Async challenge | On device, validated by the server | B | Play offline, send when online |
+| Standard or Relaxed quiz, Practice | On device; the server re-grades | B | Yes |
+| Global Daily, Daily 5 | On device; the server re-grades | B | Yes (prefetched) |
+| Async challenge | On device; the server re-grades | B | Play offline, send when online |
 | Live event (V2), real-time 1v1 (V3) | **Server** | **A** | No |
 
 - **Tier A:** answer keys are **never** sent to the device before an answer is submitted. The server controls timing, and each answer is submitted individually.
 - **Tier B:**
-  - Answer keys are included in the session payload.
-  - On completion the server checks plausibility: answer-time distributions, impossible speeds, suspicious perfect-score patterns.
+  - Answer keys are on the device. Every source but the Global Daily carries its questions, keys included, in the session. A Global Daily session holds a content version instead, and the app fetches the body every player of that date shares (§19.3). This shape is v0, and BE-05 finalises it (ADR 0024, S1).
+  - On completion the server re-grades every answer with the shared engine against the session's question snapshot. Its result is authoritative; the app's is optimistic (roadmap §4.3 for the re-grade, §7 for the rest).
+  - The server also checks plausibility: answer-time distributions, impossible speeds, suspicious perfect-score patterns.
   - Offline XP is capped per day until the server validates it (XP-04).
 - **V2:** device attestation (Apple App Attest or Google Play Integrity) is required for Tier A submissions.
 
@@ -628,13 +645,13 @@ The session is an explicit state machine (XState v5). It is independent of the U
 | State | Meaning | Exits |
 |---|---|---|
 | `loading` | Fetch or restore the session and preload the first question's assets | `LOADED` → `intro`, `FAILED` → `error` |
-| `intro` | Optional 3-2-1 countdown (timed modes) | After 3 s *(tunable)* → `presenting` (ADR 0009) |
+| `intro` | Optional 3-2-1 countdown (timed modes) | After 3 s *(tunable)* → `presenting` |
 | `presenting` | Question visible, input enabled, timer running if timed | `SUBMIT` → `locked`, `TIMEOUT` → `locked` (no answer) |
 | `locked` | Input disabled; grading (on device instantly, or awaiting the server in Tier A); lasts at least 150 ms | `GRADED` → `revealing` |
 | `revealing` | Correct/incorrect feedback: animation, haptic, sound (~600 ms) | `DONE` → `explaining` |
 | `explaining` | Explanation, sources and the report option are visible | `NEXT` → `presenting` (next question) or `finishing` |
-| `finishing` | Compute the summary; submit, or queue if offline | `OK` or `QUEUED` → `results` |
-| `paused` | App in the background (practice and Relaxed pause the timer) | `RESUME` → previous state |
+| `finishing` | Compute the summary; write the completion to the outbox, then submit (§10.6) | `OK` or `QUEUED` → `results` |
+| `paused` | App in the background (§10.3 says which sessions pause and how) | `RESUME` → previous state |
 | `reconnecting` | Tier A only: connection lost | `RESYNCED` → server-dictated state |
 | `abandoned` | User confirmed exit | Terminal |
 
@@ -651,11 +668,11 @@ These events apply in every state:
   - +10 s when the question contains media or math.
 - **Extended time** (×1.5 or ×2) and **Untimed** are available in Settings (A11Y-08). Extended time doesn't raise the speed bonus, which is always measured against the Standard limit (§10.5, D13). Untimed disables the speed bonus only.
 - **Warnings:** a visual warning in the last 5 s, and one light haptic per second in the last 3 s.
-- **The session machine owns the deadline; the UI thread draws it** (ADR 0009). While a timed question is shown, the
+- **The session machine owns the deadline; the UI thread draws it** (ADRs 0035 and 0037). While a timed question is shown, the
   machine keeps one timer per moment (the warning, each tick, the timeout). The ring and bar animate a Reanimated
-  shared value on the UI thread. React must not re-render on every tick; the one exception is the timer's accessible
-  value while a screen reader runs.
-- **Backgrounding:** Standard, Relaxed and Practice sessions pause. Tier B dailies and challenges pause and log the pause time for plausibility checks. Tier A keeps running on the server's clock. Time while the app is closed counts the same way: a restored session pauses as of its last save (§10.6, ADR 0010).
+  shared value on the UI thread, a frame at a time; each frame is a tick, and React must not re-render on a tick. The
+  one exception is the timer's accessible value, which updates once a second while a screen reader runs.
+- **Backgrounding:** Standard, Relaxed and Practice sessions pause. Tier B dailies and challenges pause and log the pause time for plausibility checks. Tier A keeps running on the server's clock. Time while the app is closed counts the same way: a restored session pauses as of its last save (§10.6).
 
 ### 10.4 Answer rhythm
 
@@ -669,14 +686,14 @@ These events apply in every state:
 
 - **Base points** for a correct answer: `100 × difficultyMultiplier`, where the multiplier ranges from 0.8 to 1.5 and comes from the question's rating.
 - **Speed bonus** (timed modes only): up to +50%, proportional to the time remaining on the question's **Standard** limit, whatever the player's A11Y-08 setting. Extra time helps a player answer but never earns extra points, and an answer after the Standard limit gets no speed bonus (D13).
-- **Combo:** +10 for each consecutive correct answer, capped at +50.
+- **Combo:** the first correct answer in a row earns none; the n-th consecutive correct answer earns min(10 × (n − 1), 50) (ADR 0021, R3).
 - **Points and XP are separate.** Points rank a single session; XP measures progress (§6.4).
 
 ### 10.6 Persistence and recovery
 
-- While a session can be resumed, each state transition saves a snapshot of it to MMKV, keyed by `sessionId` (ADR 0010). Results delete it. Today the Global Daily is the only session saved.
+- While a session can be resumed, each state transition saves a snapshot of it to MMKV, keyed by `sessionId` (ADRs 0037 and 0040). Results delete it.
 - **Resuming** applies to non-Tier-A sessions only. An unfinished session can be resumed until the end of its date (for a daily) or its `expiresAt`, whichever comes first. The Global Daily offers it on Today as **Continue** (DLY-04); there's no launch prompt. A restored session opens on the pause overlay, and the time since its last save counts as pause time (§10.3).
-- **Completed sessions** go through the outbox (§16, ADR 0011). A completion is written there before its first send, so one finished offline, or cut off mid-send, syncs later under the same `Idempotency-Key`.
+- **Completed sessions** go through the outbox (§16, ADR 0040). A completion is written there before its first send, so one finished offline, or cut off mid-send, syncs later under the same `Idempotency-Key`.
 
 ### 10.7 Preloading
 
@@ -691,10 +708,12 @@ These events apply in every state:
 
 | Entity | Key fields |
 |---|---|
-| **Question** | `id`, `version`, `type`, `prompt` (blocks), `payload` (options or answer data per type), `explanation` (blocks), `sources[]`, `domain`, `topic`, `subtopic`, `tags[]`, `rating` (Glicko-2: rating, deviation), `editorialDifficulty`, `locale`, `regionTags[]`, `minAge`, `mediaTypes[]`, `authorId`, `reviewerId`, `status` (draft, in_review, published, suspended, retired), `stats` |
+| **Question** | `id`, `version`, `type`, `prompt` (blocks), `payload` (what a player sees, per type), `key` (the answer, per type), `explanation` (blocks), `sources[]`, `domain`, `topic`, `subtopic`, `tags[]`, `rating` (Glicko-2: rating, deviation), `editorialDifficulty`, `locale`, `regionTags[]`, `minAge`, `mediaTypes[]`, `authorId`, `reviewerId`, `status` (draft, in_review, published, suspended, retired), `stats` |
 | **Quiz** | `id`, `version`, `title`, `description`, `cover`, `questionRefs[]` (question id + version), `settings` (timed, time per question, shuffle), `visibility` (private, unlisted, public), `locale`, `domain`, `topic`, `authorId`, `status` |
-| **MediaAsset** | `id`, `kind` (image, audio, svg), `url`, `width`, `height`, `placeholder` (blurhash or thumbhash), `alt` (required for images), `transcript` (required for audio), `durationMs`, `bytes` |
+| **MediaAsset** | `id`, `kind` (image, audio, svg), `url`, `width`, `height`, image variants (AVIF and WebP at device widths, generated at publish: ADR 0059), `placeholder` (blurhash or thumbhash), `alt` (required for images), `transcript` (required for audio), `durationMs`, `bytes` |
 | **Taxonomy** | `domain` → `topic` → `subtopic`, plus curated `tags` |
+
+A MediaAsset's own `alt` and `transcript` describe it in the media library and are where an editor's text starts. They aren't sent to a device: a device renders the block's (§11.3).
 
 ### 11.2 Versioning
 - Editing a published question or quiz creates a **new version**.
@@ -703,16 +722,22 @@ These events apply in every state:
 
 ### 11.3 Rich content blocks
 
-Question text is stored as **structured blocks**, never raw HTML or Markdown strings.
+Question text is stored as **structured blocks**, never raw HTML or Markdown strings (ADR 0008). Content is a flat list: a block never holds another block.
+
+**Inline content**, inside a paragraph, a quote or a list item, is text spans and links:
+- a **text span** carries up to five inline marks: bold, italic, code, subscript, superscript (never subscript with superscript);
+- a **`link`** holds text spans and one https address in canonical form (lowercase `https://` and domain; no credentials, port or IP address), which opens in the in-app browser (SEC-08). A link can't hold a link.
 
 | Block | Rendering |
 |---|---|
-| `paragraph` | Text with inline marks (bold, italic, code, subscript, superscript) |
+| `paragraph` | Inline content |
 | `math` | LaTeX source. **Rendered to SVG on the server when the question is published** (MathJax, with `mhchem` for chemistry), and displayed as SVG on the device. The editor's live preview may use an Expo DOM component with KaTeX. |
 | `code` | Source plus language, **tokenized when published**. The device renders the tokens with theme colors. |
-| `image` | A MediaAsset reference. Pinch to zoom; a placeholder shows while loading. |
-| `audio` | A MediaAsset reference. Clips ≤ 30 s, loudness-normalized, with a transcript. |
-| `quote`, `list` | Plain structural blocks |
+| `image` | A MediaAsset reference by id, with the block's own **alt text**. Pinch to zoom; a placeholder shows while loading. |
+| `audio` | A MediaAsset reference by id, with the block's own **transcript**. Clips ≤ 30 s, loudness-normalized. |
+| `quote`, `list` | Plain structural blocks holding inline content; a list holds items, not lists |
+
+**The text a device renders is the block's.** An image's alt text and an audio clip's transcript are written on the block, because the same image can need different words in two questions (ADR 0008). The published media asset a device fetches carries neither (ADR 0022).
 
 ### 11.4 Launch domains (proposed, 11)
 
@@ -775,7 +800,7 @@ On iOS 26+, `expo-glass-effect` may be used for branded floating elements. Other
 | Geography | Teal | | |
 
 **Rules:**
-- Text contrast is ≥ 4.5:1, and ≥ 3:1 for large text and UI components, in **both** themes.
+- Text contrast is ≥ 4.5:1, and ≥ 3:1 for large text and UI components, in **every** theme: light, dark and high contrast.
 - Correct and incorrect **never rely on color alone**. They always pair color with an icon (✓ / ✕), text and a haptic.
 - Category hues must stay visually distinct from `success` and `error`, and always come with an icon and a label.
 - Check palettes for deuteranopia, protanopia and tritanopia.
@@ -801,7 +826,7 @@ On iOS 26+, `expo-glass-effect` may be used for branded floating elements. Other
 | `callout` | 16 / 21 | Secondary content |
 | `footnote` | 13 / 18 | Metadata |
 | `caption` | 12 / 16 | Labels |
-| `countdown` | 88 / 96, bold | The 3-2-1 before a timed session (Inter, a timer: ADR 0008) |
+| `countdown` | 88 / 96, bold | The 3-2-1 before a timed session (the text face, Inter: it's a timer) |
 
 - **All text scales** with the system text size (Dynamic Type on iOS, font scale on Android). Content text is never capped; dense chrome may be capped where the platform allows it.
 - **Long questions** step down from `title2` to `title3`, never below `body`.
@@ -859,7 +884,7 @@ Final values are tuned in P0.
 
 - **Chrome icons:** SF Symbols through `expo-symbols` on iOS, and Material Symbols on Android.
 - **Brand illustrations:** a custom set for domains, badges and currencies.
-- **Mascot:** states for idle, happy, thinking, sad, celebrate and sleeping. Built in Rive (V1), with a static image for each state under Reduce Motion.
+- **Mascot:** states for idle, happy, thinking, sad, celebrate and sleeping. Static images at MVP. A Rive state machine is planned for V1, once Rive's Nitro version range is compatible with Unistyles (roadmap §3.2); a static image for each state stays under Reduce Motion.
 
 ### 12.9 Component inventory
 
@@ -871,7 +896,7 @@ Final values are tuned in P0.
 | `ProgressSegments` | upcoming, current, correct, incorrect | MVP |
 | `QuizCard` | S / M / L; new, in progress, completed | MVP |
 | `CategoryChip`, `CategoryCard` | default, selected; per-domain color | MVP |
-| `DailyCard` | available, completed, locked (countdown) | MVP |
+| `DailyCard` | available, in progress, completed, next unlock (countdown) | MVP |
 | `StreakFlame` | inactive, lit today, at risk, frozen, milestone | MVP |
 | `XPBar`, `LevelBadge` | idle, filling, level-up | MVP |
 | `DailyGoalRing` | 0–100%, complete | MVP |
@@ -893,7 +918,7 @@ Final values are tuned in P0.
 
 **Native components** (`@expo/ui` and Expo Router): BottomSheet, Menu, Picker, Switch, Slider, header search bar, tabs.
 
-**Storybook:** every component is built in Storybook for React Native in **every state × light/dark × default and largest text size**.
+**Gallery:** every component is shown in a development-only gallery route in the app, in **every state × light, dark and high contrast × default and largest text size** (ADR 0043). The route is left out of production builds. It replaces Storybook, which is revisited at V1.
 
 ---
 
@@ -906,7 +931,7 @@ Final values are tuned in P0.
 | A11Y-03 | Layouts reflow without clipping up to the largest accessibility text sizes (at least 200%). | MVP |
 | A11Y-04 | Reduce Motion is respected (§12.5). The timer still shows remaining time as text. | MVP |
 | A11Y-05 | Color is never the only signal (§12.2). Palettes are checked for color-blindness. | MVP |
-| A11Y-06 | Text contrast is ≥ 4.5:1, and ≥ 3:1 for large text and UI components, in both themes. | MVP |
+| A11Y-06 | Text contrast is ≥ 4.5:1, and ≥ 3:1 for large text and UI components, in every theme: light, dark and high contrast. | MVP |
 | A11Y-07 | Touch targets are ≥ 44×44 pt (iOS) and ≥ 48×48 dp (Android). Answer buttons are ≥ 56 pt tall. | MVP |
 | A11Y-08 | **Adjustable timing:** Untimed and Extended (×1.5, ×2) settings. Events that are timed-only say so in advance. | MVP |
 | A11Y-09 | Every drag interaction has an alternative: accessibility actions ("move up", "move down") and tap-to-select-then-place. | MVP |
@@ -955,7 +980,7 @@ Breaching a budget blocks the release.
 | Tap → visual and haptic feedback | ≤ 100 ms |
 | Transition to the next question (assets preloaded) | ≤ 300 ms |
 | Frame rate in the quiz session and lists | Sustained 60 fps (120 on ProMotion); no hitch > 50 ms during reveal |
-| React renders during the timer | None per tick (§10.3); while a screen reader runs, only the timer's accessible value, once a second (ADR 0009) |
+| React renders during the timer | None per tick (§10.3); while a screen reader runs, only the timer's accessible value, once a second |
 | Memory during a session | ≤ 300 MB on low-end Android |
 | Store download size | ≤ 50 MB; alert on +10% growth per release |
 | Question image payload | ≤ 150 KB at device width (AVIF or WebP) |
@@ -968,7 +993,7 @@ Breaching a budget blocks the release.
 - **Rendering:**
   - React Compiler is on (the Expo default).
   - No Context for high-frequency state; use Zustand with selectors.
-  - FlashList v2 or Legend List v3 for every long list.
+  - FlashList 2 for every long list, with Legend List as the fallback (ADR 0036).
 - **Images:** `expo-image` with placeholders and prefetching.
 - **Animation:** all of it runs through Reanimated on the UI thread.
 - **Startup:**
@@ -987,13 +1012,13 @@ Breaching a budget blocks the release.
 
 | ID | Requirement | Phase |
 |---|---|---|
-| OFF-01 | Today's and tomorrow's Global Daily and Daily 5 are prefetched whenever the device is online, each kept as its session (ADR 0011). | MVP |
+| OFF-01 | Today's and tomorrow's Global Daily and Daily 5 are prefetched while the device is online, at a randomized time within a window (§15.4), each kept as its session. | MVP |
 | OFF-02 | Downloadable topic packs for offline play (a Premium perk). | V1 |
-| OFF-03 | Completed sessions go into an **outbox** on the device (MMKV, ADR 0011) with idempotency keys. They sync on launch, on reconnect and on return to the foreground, with backoff. | MVP |
+| OFF-03 | Completed sessions go into an **outbox** on the device (MMKV, ADR 0040) with idempotency keys. They sync on launch, on reconnect and on return to the foreground, with backoff. | MVP |
 | OFF-04 | The streak is credited from the completion timestamp, checked against the last known server time offset. The server validates plausibility. | MVP |
 | OFF-05 | Tier A modes are unavailable offline, and the UI says so clearly. | V2 |
 | OFF-06 | The offline indicator never blocks the user. | MVP |
-| OFF-07 | The query cache is persisted to MMKV and restored before the first render, then revalidated in the background (ADR 0011). | MVP |
+| OFF-07 | The query cache is persisted to MMKV and restored before the first render, then revalidated in the background (ADR 0038). | MVP |
 
 ---
 
@@ -1004,7 +1029,7 @@ Breaching a budget blocks the release.
 | ID | Requirement | Phase |
 |---|---|---|
 | SEC-01 | No secrets in the app bundle. | MVP |
-| SEC-02 | Tokens live in `expo-secure-store`. Refresh tokens rotate. | MVP |
+| SEC-02 | The app holds a revocable server-side session, kept in `expo-secure-store`. A separate secret held on the device, also in `expo-secure-store`, can start a new session for the same guest at any time, so an expired session never orphans a streak. The secret never appears in logs or analytics (ADR 0073). | MVP |
 | SEC-03 | Integrity tiers are enforced as in §10.1. | MVP |
 | SEC-04 | Device attestation (App Attest or Play Integrity) for Tier A. | V2 |
 | SEC-05 | The server checks plausibility on Tier B results (§10.1). | MVP |
@@ -1030,71 +1055,84 @@ Breaching a budget blocks the release.
 
 ## 18. App architecture and tech stack
 
-### 18.1 Platform versions (verified 2026-09-27)
+### 18.1 Platform versions (verified 2026-09-27 and 2026-11-14)
 
-- **Expo SDK 57** is the current stable release: React Native 0.86, React 19.2. **SDK 58** has been in beta since 2026-09-15 (React Native 0.88 RC, React 19.3). **Start on 57 and move to 58 when it ships stable.**
+Version 1.1 takes its versions from roadmap §3.1 and ADR 0030. Check the official docs again on the day you install or upgrade.
+
+- **Start on Expo SDK 58** (58.0.25): React Native 0.88, React 19.3, stable since 2026-10-15 (ADR 0030). It sets the floor: iOS 16.4 and Android `minSdk` 24.
 - The **New Architecture has been mandatory since SDK 55.** React Compiler is enabled by default in the Expo template.
-- **NativeTabs:** the import is `expo-router/unstable-native-tabs` on SDK 57 and becomes stable as `expo-router/native-tabs` on SDK 58.
-- **`@expo/ui`:** stable since SDK 56. **`expo-widgets`:** stable for iOS since SDK 56; Android widgets are in the SDK 58 beta.
+- **NativeTabs:** stable on SDK 58, imported from `expo-router/native-tabs`.
+- **`@expo/ui`:** stable since SDK 56. **`expo-widgets`:** stable for iOS since SDK 56. On 2026-09-27 Android widgets were in the SDK 58 beta; NTF-08's ticket checks their state before building on them.
 - **`expo-av` was removed** in SDK 55. Use `expo-audio` and `expo-video`.
 
 ### 18.2 Stack
 
 | Concern | Choice | Notes |
 |---|---|---|
-| Framework | Expo SDK 57 → 58, **development builds** (not Expo Go), TypeScript strict | |
+| Framework | Expo SDK 58, **development builds** (not Expo Go), TypeScript ~6.0 strict | ADR 0030 |
 | Navigation | Expo Router | NativeTabs, native stack, form sheets with detents, link previews (iOS), typed routes, universal links, shared routes across tabs |
 | Native UI | `@expo/ui`, `expo-glass-effect`, `expo-symbols` | Native chrome and SwiftUI/Compose controls |
 | Styling and theming | **Unistyles 3** | Themes switch without re-renders; fits a token-based multi-theme system |
 | Animation and gestures | Reanimated 4, `react-native-worklets`, Gesture Handler | UI-thread animation and timers |
-| Graphics | React Native Skia | Confetti and particles, timer ring, charts, share-card rendering |
-| Mascot | Rive React Native runtime | Confirm New Architecture support when adopting it (V1) |
+| Graphics | React Native Skia, loaded lazily | Confetti and particles, and share cards only (ADR 0035) |
+| Timer ring and bar | `react-native-svg` plus Reanimated | §10.3 (ADR 0035) |
+| Mascot | Static images (MVP); Rive React Native runtime (V1) | Rive's Nitro version range conflicts with Unistyles today; re-check at V1 (roadmap §3.2) |
 | Haptics and sound | `expo-haptics`, `expo-audio` | §12.6, §12.7 |
-| Lists | FlashList v2 (or Legend List v3) | |
+| Lists | FlashList 2 | Legend List is the fallback (ADR 0036) |
 | Images and video | `expo-image`, `expo-video` | |
 | Session state | XState v5 | §10.2 |
 | Server state | TanStack Query v5, persisted to MMKV | |
 | UI and app state | Zustand | Settings, onboarding, preferences |
 | Key-value storage | `react-native-mmkv` v4 (+ `react-native-nitro-modules`) | |
-| Structured local data | `expo-sqlite` + Drizzle ORM (V1) | Offline packs and the mistakes cache. The outbox is in MMKV (ADR 0011). |
-| Secrets | `expo-secure-store` | |
-| Validation and contracts | zod | Shared with the backend through `packages/contracts` |
+| Structured local data | `expo-sqlite` + Drizzle ORM (V1) | Offline packs and the mistakes cache. The outbox is in MMKV (ADR 0040). |
+| Secrets | `expo-secure-store` | The session token and the device secret (SEC-02) |
+| Validation and contracts | zod | Shared with the API through `packages/contracts` |
 | Forms | react-hook-form + zod | Creator editor (V1) |
-| API client | Hono typed client (`hc`) over the shared route types | Or a thin fetch wrapper that parses responses with zod |
-| Mocks | MSW (React Native integration) | Fixture scenarios (§19.6) |
+| API client | A thin client driven by the `contracts` endpoint registry | Validates every response at run time and handles timeouts, backoff and 429 in one place. `hc` is used only by the admin console (ADR 0041) |
+| Mocks | An in-process fake server from `packages/contracts`, injected at the client's transport | Fixture scenarios (§19.6), shared with tests (ADR 0042) |
 | i18n | `expo-localization` + i18next (ICU) | |
-| Auth (device side) | Better Auth Expo client, Sign in with Apple (`expo-apple-authentication`), Google | Depends on the backend (§19.1) |
+| Auth (device side) | Better Auth Expo client, Sign in with Apple (`expo-apple-authentication`), Google | ADR 0045; Better Auth on the API is §19.1 (ADR 0057) |
 | Notifications | `expo-notifications` + the Expo push service | |
 | Widgets and Live Activities | `expo-widgets` | |
-| Sharing | `expo-sharing`; share-card capture with Skia snapshots or `react-native-view-shot` | |
+| Sharing | `expo-sharing`; share cards drawn with Skia | ADR 0035 |
 | Media input (V1) | `expo-image-picker`, `expo-image-manipulator`, `expo-camera` (scan-to-quiz, V2) | |
 | Store review | `expo-store-review` | RES-04 |
 | Purchases (V1) | RevenueCat (`react-native-purchases`) | |
 | Analytics, flags, experiments | PostHog | |
-| Crash and performance monitoring | Sentry (`@sentry/react-native`) or EAS Observe | |
+| Crash and performance monitoring | Sentry (`@sentry/react-native`) for crashes; EAS Observe for startup and navigation timing | Observe doesn't replace Sentry yet (ADR 0048) |
 | OTA updates | `expo-updates` + EAS Update, fingerprint runtime versions | |
-| Design workbench | Storybook for React Native | |
-| Testing | Jest, React Native Testing Library, fast-check, Maestro | §21 |
-| CI/CD | EAS Build, Submit, Update, Workflows | |
-| Repository | pnpm workspaces monorepo | §18.3 |
+| Design workbench | A development-only gallery route in the app | Every state × theme × text size; replaces Storybook until V1 (§12.9, ADR 0043) |
+| Testing | Jest and React Native Testing Library for the app; Vitest for the shared packages and the API; fast-check; Maestro | §21 (ADRs 0002, 0050, 0065) |
+| CI/CD | GitHub Actions for checks and API deploys; EAS Build, Submit, Update and Workflows for the app | ADR 0071 |
+| Repository | pnpm 11 workspaces monorepo | §18.3 (ADR 0069) |
 
 ### 18.3 Monorepo layout
 
 ```
 /
 ├── apps/
-│   ├── mobile/              # Expo app (iOS, Android, web share pages)
-│   ├── admin/               # internal admin (later, with the backend project)
-│   └── api/                 # Hono backend (separate, later)
+│   ├── mobile/              # Expo app (iOS, Android, web share and marketing pages)
+│   ├── api/                 # Hono API and worker
+│   └── admin/               # React Admin console (internal)
 ├── packages/
-│   ├── contracts/           # zod schemas, route types, error codes, fixtures
-│   ├── quiz-engine/         # question-type schemas, graders, scoring, normalization (shared by app and server)
+│   ├── contracts/           # zod schemas, endpoint registry, error codes, fixtures, fake server
+│   ├── quiz-engine/         # question-type schemas, graders, normalization, scoring (shared by app and server)
+│   ├── game-rules/          # streak and day-boundary logic, XP, levels, badge rules (pure functions)
 │   ├── content-blocks/      # block schema and validation (shared)
+│   ├── content-tools/       # content:validate, import, drafting helpers
+│   ├── design-tokens/       # tokens as data: Unistyles themes, CSS variables
 │   └── config/              # tsconfig, eslint, prettier presets
+├── content/                 # question drafts and daily sets, as files until the CMS owns them
 └── docs/
     ├── spec.md              # this document
-    └── adr/                 # architecture decision records
+    ├── roadmap.md           # phases, tickets, stack and guardrails
+    ├── traceability.md      # MVP requirements to tickets
+    ├── adr/                 # architecture decision records
+    ├── plans/               # ticket plans
+    └── design/              # approved screens, tokens and component specs
 ```
+
+The layout follows roadmap §4.2.
 
 ### 18.4 App source layout (by feature)
 
@@ -1116,7 +1154,7 @@ apps/mobile/src/
 │   └── settings/
 ├── question-types/          # renderers + editor forms per type (graders live in quiz-engine)
 ├── design-system/
-│   ├── tokens/              # color, type, spacing, radius, motion, haptics, sound
+│   ├── tokens/              # from packages/design-tokens: color, type, spacing, radius, motion, haptics, sound
 │   ├── components/
 │   └── theme/               # Unistyles themes (light, dark, high-contrast)
 ├── lib/
@@ -1126,7 +1164,7 @@ apps/mobile/src/
 │   ├── i18n/
 │   ├── haptics/  sound/
 │   └── notifications/
-└── mocks/                   # MSW handlers and scenarios
+└── mocks/                   # fake-server wiring and the scenario switcher (the fake server is in packages/contracts)
 ```
 
 **Rules:**
@@ -1141,28 +1179,32 @@ apps/mobile/src/
 | Server state | TanStack Query (+ MMKV persistence) | Content, profile, progress, challenges |
 | Session state | XState machine per session (+ MMKV snapshot) | The active quiz |
 | App and UI state | Zustand | Settings, onboarding progress, preferences |
-| Durable local data | MMKV now; SQLite + Drizzle from V1 | The outbox and kept dailies (MMKV, ADR 0011); offline packs and the mistakes cache (SQLite) |
-| Secrets | SecureStore | Tokens |
+| Durable local data | MMKV now; SQLite + Drizzle from V1 | The outbox and kept dailies (MMKV, ADR 0040); offline packs and the mistakes cache (SQLite) |
+| Secrets | SecureStore | The session token and the device secret |
 
 ### 18.6 Engineering standards
-- **Language and tooling:** TypeScript strict; ESLint and Prettier (or Biome); conventional commits; an ADR for every significant decision.
+- **Language and tooling:** TypeScript strict; ESLint 9 and Prettier (ADR 0070); conventional commits; an ADR for every significant decision.
 - **Error handling:** an error boundary per route (Expo Router's `ErrorBoundary` export), with user-safe messages mapped from error codes.
 - **Feature flags:** every new feature ships behind a flag, and a kill switch exists for every risky surface.
 
 ---
 
-## 19. Backend contract (assumptions)
+## 19. Backend contract
 
-The backend is a separate project. This section records **what the app assumes**, so the app can be built now against mocks.
+The API is built now, in this monorepo, contract first (D5, ADR 0072). This section records what the app relies on. Every endpoint exists as a zod schema in `packages/contracts` before the API or the app implements it, and the app, the API and the fake server (§19.6) parse with the same schemas. Roadmap §4.3 describes the three flows that must be right: guest identity, fetching the daily, and completing a session.
 
-### 19.1 Assumed stack
-- **Runtime and database:** **Hono** (TypeScript) with **Postgres**.
-- **Redis or Valkey:** leaderboards and leagues (sorted sets) and rate limiting.
-- **Media:** object storage behind a CDN.
+### 19.1 Stack
+
+The choices and their versions are in roadmap §3.1 and ADRs 0051 to 0068.
+
+- **Runtime:** **Hono** 4 on Node 26, in one container image that runs an API process and a worker process (ADR 0051), on Fly.io with at least two machines (ADR 0052).
+- **Database:** **Postgres** on Neon (ADR 0053), through Drizzle's SQL-style builder (ADR 0054).
+- **Cache and rate limits:** Postgres and the CDN. There is no Redis or Valkey at MVP: leagues stay in Postgres, and Redis is reconsidered for live events in V2 (ADR 0056).
+- **Media:** Cloudflare R2 behind the CDN, with image variants generated at publish (ADR 0059). Cloudflare also sits in front of the API: CDN, WAF and per-IP rate limits (ADR 0060).
 - **Real time:** WebSockets for live events (V2).
-- **Scheduled workers:** daily sets, league rollover, streak evaluation and notifications.
-- **Auth:** Better Auth (it supports Hono and Expo) or an equivalent. It must support **guest accounts and account linking**.
-- **Moderation:** text and image moderation on the server, before content is visible.
+- **Jobs and schedules:** pg-boss, in the same database (ADR 0055): daily sets, league rollover, streak evaluation and notifications.
+- **Auth:** Better Auth, pinned exactly, with **guest accounts and account linking** (ADR 0057). All game data is keyed to our own player id, never to the auth library's user id.
+- **Moderation:** on the server, before content is visible. At MVP that is text: usernames pass a blocklist and a moderation service behind our own interface (ADR 0062). Images need no moderation at MVP; public content in V2 reopens this.
 
 ### 19.2 Contract rules
 
@@ -1174,10 +1216,10 @@ The backend is a separate project. This section records **what the app assumes**
 | Server time in `/config` and on every session response | Streaks, daily unlocks and timers resist clock tampering |
 | Versioned content with `ETag` / `Cache-Control` | Aggressive caching that invalidates correctly |
 | Errors as RFC 9457 problem details with a stable `code` | The app shows localized messages |
-| Short-lived access tokens with rotating refresh tokens | Secure sessions |
-| `/config` returns remote config, flags, `minAppVersion`, an optional `updateUrl` per platform and daily-set metadata (ADR 0012) | Kill switches, forced updates, tunables |
+| A revocable server-side session, and a secret held on the device that can start a new one for the same guest (SEC-02, ADR 0073) | Secure sessions; a guest's identity outlives any session |
+| `/config` returns remote config, flags, `minAppVersion` and an optional `updateUrl` per platform; it carries no daily-set metadata (ADR 0024, S13) | Kill switches, forced updates, tunables |
 | 429 responses carry `Retry-After` | Graceful backoff |
-| Timestamps in ISO 8601 UTC; the client sends its IANA time zone | Correct day boundaries |
+| Timestamps in ISO 8601 UTC; the client sends its IANA time zone and its UTC offset in minutes (local time minus UTC, east positive), as ADR 0024 sets out | Correct day boundaries |
 
 ### 19.3 Resource outline
 
@@ -1186,8 +1228,8 @@ The backend is a separate project. This section records **what the app assumes**
 | Auth and account | `POST /auth/guest`, provider sign-in, `POST /auth/link`, `GET/PATCH /me`, `DELETE /me`, `POST /me/export` | MVP (export V1) |
 | Config | `GET /config` | MVP |
 | Content | `GET /domains`, `GET /topics/:slug`, `GET /quizzes?filters&cursor`, `GET /quizzes/:id`, `GET /collections/:slug`, `GET /search?q` | MVP |
-| Dailies | `GET /daily/global?date=`, `GET /daily/personal?date=` | MVP |
-| Sessions | `POST /sessions {source}` → questions (with keys for Tier B) · `POST /sessions/:id/complete` (Tier B batch: answers, timings, pauses) · `POST /sessions/:id/answers` (Tier A, per answer) · For a daily, `POST /sessions` is get-or-create per player and date, accepts tomorrow, and expires at the end of the date (ADR 0011) | MVP / V2 |
+| Dailies | `GET /daily/global/:date/:contentVersion`: the Global Daily's body, public and immutable, served from the CDN. The content version can't be guessed and reaches a device only through its session, so tomorrow's answers stay out of reach of anyone without one. Every other source carries its questions in the session. This shape is v0; BE-05 finalises it (ADR 0024, S1). `GET /daily/personal?date=` | MVP |
+| Sessions | `POST /sessions {source}` → questions (with keys for Tier B); a Global Daily session holds its `contentVersion` instead, and the app fetches the body once per version · `POST /sessions/:id/complete` (Tier B batch: answers, timings, pauses) · `POST /sessions/:id/answers` (Tier A, per answer) · For a daily, `POST /sessions` is get-or-create per player, date and source, accepts tomorrow, and expires at the end of the date | MVP / V2 |
 | Progress | `GET /me/progress` (XP, level, streak, freezes, goal), `GET /me/badges`, `GET /me/mistakes` | MVP / V1 |
 | Leagues | `GET /leagues/current` | V1 |
 | Challenges | `POST /challenges`, `GET /challenges?status=`, `GET /challenges/:code`, `POST /challenges/:code/accept` | MVP |
@@ -1213,32 +1255,32 @@ The backend is a separate project. This section records **what the app assumes**
   - the client recomputes its clock offset from `serverTime`.
 
 ### 19.5 Domain entities
-- **People:** User, GuestLink, Profile, Device, NotificationPrefs, Interest.
+- **People:** Player (our own id, which all game data is keyed to), User (the auth library's, linked to a player), GuestLink, Profile, Device, NotificationPrefs, Interest.
 - **Content:** Domain, Topic, Subtopic, Tag, Question (+ versions), Quiz (+ versions), MediaAsset, QuestionStats.
 - **Play:** DailySet, Session, SessionAnswer.
 - **Progress:** Streak, StreakEvent, XPEvent, Level, Badge, UserBadge.
-- **Competition:** Rating (user × domain), League, LeagueCohort, LeagueMembership, Challenge, LiveEvent.
+- **Competition:** Rating (player × domain), League, LeagueCohort, LeagueMembership, Challenge, LiveEvent.
 - **Social and safety:** Friendship, Block, Report, ModerationCase.
 - **Commerce:** Wallet, WalletTransaction, Entitlement.
 
-### 19.6 Mocking during app development
-- MSW handlers are generated from `contracts`, with shared fixtures.
+### 19.6 The fake server
+- `packages/contracts` ships a fake server: plain functions that answer the registry's endpoints from shared fixtures and scenarios. It is injected at the app's client transport and runs in the app's own process, and tests use the same one (ADR 0042). A production build can't switch it on.
 - **Scenario switcher** (dev menu):
   - new user;
   - 100-day streak;
   - frozen streak;
   - league promotion;
-  - expired challenge (with the challenges ticket, ADR 0012);
+  - expired challenge;
   - offline;
   - slow network;
   - server errors;
-  - forced update (ADR 0012).
+  - forced update.
 
 ---
 
 ## 20. Analytics and experimentation
 
-- **Tools:** PostHog for events, funnels, retention, feature flags and A/B tests. Sentry or EAS Observe for crashes and performance.
+- **Tools:** PostHog for events, funnels, retention, feature flags and A/B tests. Sentry for crashes, and EAS Observe for startup and navigation timing (ADR 0048).
 - **Naming:** `object_action` in snake_case.
 - **Common properties:** `session_source`, `mode`, `quiz_id`, `domain`, `locale`, `app_version`, `ota_update_id`, `is_guest`.
 - **No personal data in event properties.** Consent is respected (PRIV-04).
@@ -1271,54 +1313,58 @@ The backend is a separate project. This section records **what the app assumes**
 
 | Layer | Tooling | Coverage focus |
 |---|---|---|
-| Unit | Jest, fast-check (property-based) | Graders, answer normalization, scoring, **streak, time-zone and DST logic**, league math, economy |
-| Component | React Native Testing Library | Design-system components, session screen states |
-| Visual | Storybook | Every state × theme × text size |
+| Unit | Vitest, fast-check (property-based), for the shared packages (ADR 0002) | Graders, answer normalization, scoring, **streak, time-zone and DST logic**, league math, economy |
+| Component | Jest and React Native Testing Library (ADR 0050) | Design-system components, session screen states |
+| API | Vitest against real Postgres (ADR 0065) | Endpoints, write paths, idempotency and duplicate requests |
+| Visual | The gallery route (§12.9) | Every state × theme × text size |
 | End-to-end | Maestro on EAS Workflows | Onboarding → first quiz; Global Daily; challenge deep link; resume after interruption; complete offline → sync; account deletion; sandbox purchase (V1) |
 | Accessibility | Manual checklist (A11Y-14) | Every release |
 | Performance | Reference devices (§15.1) | Startup, session frame rate, memory; every release |
 | Beta | TestFlight, Play internal and closed testing | Before every native release |
 
-### 21.2 CI/CD (EAS Workflows)
-- **Pull request:** typecheck, lint, unit and component tests, and a fingerprint diff that flags native changes.
-- **Main branch:** preview builds and Maestro end-to-end tests.
+### 21.2 CI/CD
+- **Pull request:** GitHub Actions runs `pnpm verify` (typecheck, lint, format check, unit and component tests) as a required check (ADR 0071), with a fingerprint diff that flags native changes.
+- **Main branch:** GitHub Actions deploys the API to staging, and production is promoted by hand (roadmap FND-07); EAS Workflows makes preview builds and runs the Maestro end-to-end tests.
 - **Release:**
   1. Production build.
   2. Submit to the stores.
   3. **Phased release** on the App Store and a **staged rollout** on Google Play.
 - **OTA updates:**
   - Use EAS Update channels (`preview`, `production`) for JavaScript and asset fixes only, with fingerprint runtime versions and a documented rollback.
-  - Remote-config kill switches exist, plus a forced-update screen below `minAppVersion`. It takes over at the next safe moment, never during a quiz or its results, and goes by the last config the device saw, offline too. Update opens the server's `updateUrl`, or the store (ADR 0012).
-- **Environments:** `development` (mocks or a local API), `preview` (staging), `production`. Configuration lives in `app.config.ts` plus EAS environment variables, with no secrets in the client.
+  - Remote-config kill switches exist, plus a forced-update screen below `minAppVersion`. It takes over at the next safe moment, never during a quiz or its results, and goes by the last config the device saw, offline too. Update opens the server's `updateUrl`, or the store.
+- **Environments:** `development` (the fake server or a local API), `preview` (staging), `production`. Configuration lives in `app.config.ts` plus EAS environment variables, with no secrets in the client.
 - **Cadence:** a native release every 2–4 weeks, and OTA updates as needed.
 
 ---
 
 ## 22. Roadmap and phase gates
 
-### P0: Foundations (3–4 weeks)
+The calendar is the roadmap's (ADR 0074). Its §5 sets the phases and gates of P0 and the MVP: foundations and design in weeks 1 to 3 (gates G0 and G1), the daily end to end in weeks 4 to 6 (G2), MVP breadth in weeks 7 to 12, hardening and beta in weeks 13 to 15 (G3), and soft launch in weeks 16 to 21 (G4). The durations in version 1.0 of this section no longer apply; the scope below does. V1 is planned in detail only after G4.
+
+### P0: Foundations (roadmap phases 0 and 1)
 - **Brand and design:**
-  - brand direction and mascot concept;
+  - brand direction, name and mascot concept (DS-01, ADR 0077);
   - **design tokens** (§12);
-  - core components in Storybook.
+  - core components designed in every state on the design canvas (DS-03); they are built in the gallery route in phase 2 (FE-02).
 - **Validation:**
   - a clickable prototype of the daily loop;
-  - 10–15 interviews across the personas (§4).
+  - at least 5 people across the personas (§4) try it before G1, and the findings are folded into the screens; more sessions follow on real builds in phase 2 (ADR 0078).
 - **Engineering setup:**
-  - monorepo and an Expo SDK 57 skeleton;
+  - monorepo and an Expo SDK 58 skeleton;
   - CI;
-  - `contracts` v0, MSW mocks;
-  - `quiz-engine` with the 5 MVP question types.
+  - `contracts` v0; its fake server follows in phase 2 (FE-05);
+  - `quiz-engine` with the 5 MVP question types;
+  - the API foundations and the internal review tool, beside design (roadmap §2).
 - **Content:** taxonomy and editorial guidelines. The first 500 reviewed questions moved into the MVP content target (owner, 2026-09-30).
 
-### MVP (about 4–5 months, solo)
+### MVP (roadmap phases 2 to 5)
 - **Onboarding:** guest mode, onboarding and the age gate (ONB-01…09).
 - **Daily loop:**
   - Global Daily and Daily 5 (DLY, D5-01);
   - streaks with earned freezes (STK-01…04, 06);
   - XP, levels and daily goal (XP).
 - **Play:**
-  - session engine (§10), 5 question types, Standard and Relaxed modes;
+  - session engine (§10), 5 question types, Standard, Relaxed and Practice modes;
   - explanations, sources and reporting;
   - results, review and share card.
 - **Social:** async challenges with universal links, and blocking.
@@ -1332,9 +1378,9 @@ The backend is a separate project. This section records **what the app assumes**
 - **Content:** ≥ 3,000 reviewed questions and ≥ 60 days of daily sets.
 - **Soft launch:** 1–2 English-speaking markets for 4–6 weeks of measurement.
 
-**Gate to V1:** D1 ≥ 35%, D7 ≥ 15%, crash-free ≥ 99.5%, Global Daily completion ≥ 85%.
+**Gate to V1 (roadmap G4):** D1 ≥ 35%, D7 ≥ 15%, crash-free ≥ 99.5%, Global Daily completion ≥ 85%.
 
-### V1 (about 3 months)
+### V1
 - **Competition and social:** leagues; friends and activity; ghost races; reactions.
 - **Retention:** streak calendar, repair and bought freezes; mistakes deck and spaced repetition; seasons.
 - **Money:** coins, Premium and RevenueCat.
@@ -1371,13 +1417,13 @@ The backend is a separate project. This section records **what the app assumes**
 | **Horizontal positioning with no beachhead** | Weak marketing and a vague brand | The daily loop is the brand. Market first to students, who share fastest, and to trivia fans. Track which personas retain best and double down. |
 | **Content breadth and quality across every field** | Thin or wrong content, lost trust | Curated seed bank, an AI-draft plus human-review pipeline, sources required, auto-suspension on reports, creators from V1 |
 | **Retention mechanics feel manipulative** | Churn, bad reviews | Principle 5: freezes and repairs, no energy gates, capped notifications, quiet hours |
-| **Solo-developer scope** | Delays, burnout | Phase gates, a strict MVP, flags, and managed services everywhere |
-| **Backend arrives after the app** | App blocked or mismatched | `contracts` package, MSW mocks, contract tests at integration |
+| **Scope larger than the team** | Delays, burnout | Phase gates, a strict MVP, flags, and managed services that stay replaceable (roadmap §2) |
+| **The app and the API drift apart** | Mismatched shapes; an older app breaks on a newer API | Every endpoint is a `contracts` schema first; the app validates every response (ADR 0041); one suite runs against the fake server and the real API; `minAppVersion` as the last resort |
 | **Cheating** | Leagues and challenges lose meaning | Integrity tiers, plausibility checks, attestation (V2), XP caps |
 | **UGC moderation load** | Policy violations, store rejection | Private-first UGC, automated plus human review, report SLAs, no free-text social |
 | **Performance on low-end Android** | Poor ratings in key markets | Budgets tied to reference devices, UI-thread animation, measurement every release |
 | **Platform policy and legal change** (payments, age rules) | Rework | Isolate purchases behind RevenueCat, track guideline changes, age gate from day one |
-| **Dependencies moving to new SDKs** | Upgrade churn | Stay on current SDKs, pin versions, a fingerprint check in CI, an upgrade window every quarter |
+| **Dependencies moving to new SDKs** | Upgrade churn | Stay on current SDKs, pin versions, a fingerprint check in CI, an upgrade window in each phase |
 
 ---
 
@@ -1389,7 +1435,7 @@ The backend is a separate project. This section records **what the app assumes**
 | Forums, DMs, free-text chat | Moderation cost and child safety |
 | Support chatbot | FAQ plus contact is enough at this scale |
 | AI natural-language search | Postgres search is sufficient; revisit with data |
-| Microservices, Kafka, RabbitMQ | Premature for a solo team (backend project) |
+| Microservices, Kafka, RabbitMQ | Premature at this scale; one container image runs the API and the worker (ADR 0051) |
 | A separate Next.js web app or full web parity | Expo Router covers the needed web surfaces |
 | Pagination controls | Mobile uses infinite lists |
 | Interstitial and banner ads | Conflict with the "smooth" priority |
@@ -1400,17 +1446,18 @@ The backend is a separate project. This section records **what the app assumes**
 
 ## 25. Open questions
 
-| # | Question | Needed by |
-|---|---|---|
-| Q1 | App name, brand personality and mascot concept | P0 |
-| Q2 | Soft-launch markets, and the first languages after English | MVP end |
-| Q3 | Final minimum OS versions for SDK 58 (SDK 56+ requires iOS 16.4) and the Android minimum API level | P0 |
-| Q4 | Premium price points and the content of the trial | V1 |
-| Q5 | Whether "Create" becomes a tab | V2 |
-| Q6 | Whether to ever offer an under-13 / kids mode | Post-V2 |
-| Q7 | Final auth provider (depends on the backend project) | Before backend integration |
-| Q8 | Where the Global Daily comes from (in-house editorial, contributors, licensed banks) and licensing terms | P0 |
-| Q9 | Creator incentives (revenue share, featuring, badges only) | V2 |
+| # | Question | Needed by | State |
+|---|---|---|---|
+| Q1 | App name, brand personality and mascot concept | P0 | Decided in DS-01, pending the trademark check (ADR 0077) |
+| Q2 | Soft-launch markets, and the first languages after English | Markets: FND-04, because they fix the hosting region (roadmap O-5). Languages: MVP end | Open |
+| Q3 | Final minimum OS versions for SDK 58 (SDK 56+ requires iOS 16.4) and the Android minimum API level | P0 | Answered: iOS 16.4 and Android `minSdk` 24, unless the owner raises the floor (ADR 0030) |
+| Q4 | Premium price points and the content of the trial | V1 | Open |
+| Q5 | Whether "Create" becomes a tab | V2 | Open |
+| Q6 | Whether to ever offer an under-13 / kids mode | Post-V2 | Open |
+| Q7 | Final auth provider | Before backend integration | Answered: Better Auth (ADR 0057) |
+| Q8 | Where the Global Daily comes from (in-house editorial, contributors, licensed banks) and licensing terms | P0 | Open (roadmap O-4) |
+| Q9 | Creator incentives (revenue share, featuring, badges only) | V2 | Open |
+| Q10 | Whether a self-declared birth year (ONB-06) is enough for a 13+ app with usernames under the new age-assurance laws, or whether the platforms' age signals (`expo-age-range`) must be added | Counsel's view by M5 (roadmap O-7) | Open (ADR 0076) |
 
 ---
 
@@ -1428,7 +1475,7 @@ The backend is a separate project. This section records **what the app assumes**
 | **Integrity tier** | Where grading and timing are trusted (A: server; B: device, server-validated) |
 | **Mistakes deck** | The user's missed questions, resurfaced with spaced repetition |
 | **Knowledge Map** | A visualization of the user's mastery across domains |
-| **Block (content)** | A structured piece of question content: paragraph, math, code, image, audio |
+| **Block (content)** | A structured piece of question content: paragraph, math, code, image, audio, quote or list (§11.3) |
 | **Outbox** | The local queue of results waiting to sync |
 
 ## Appendix B: Corrections to the original brainstorm
@@ -1449,7 +1496,7 @@ The backend is a separate project. This section records **what the app assumes**
 
 ## Appendix C: Sources
 
-The Expo facts were checked on 2026-09-27 against:
+The Expo facts of version 1.0 were checked on 2026-09-27 against the links below. Version 1.1's versions come from roadmap §3.1, checked on 2026-11-14.
 - Expo SDK 58 beta: https://expo.dev/changelog/sdk-58-beta
 - Expo SDK 57: https://expo.dev/changelog/sdk-57
 - Expo SDK 56: https://expo.dev/changelog/sdk-56
@@ -1463,3 +1510,37 @@ The Expo facts were checked on 2026-09-27 against:
 - EAS Workflows E2E: https://docs.expo.dev/eas/workflows/examples/e2e-tests/
 - EAS Observe GA: https://expo.dev/changelog/eas-observe-is-now-generally-available
 - Apple App Review Guidelines: https://developer.apple.com/app-store/review/guidelines/
+
+## Appendix D: Changes in version 1.1
+
+Version 1.1 (2026-11-23, ticket FND-06) brings the spec in line with roadmap v1.1, its accepted ADRs, and the `Proposed` ADRs 0002, 0003, 0004, 0008, 0020, 0021 (R3 only), 0022 and 0024, which the roadmap's FND-06 row and the PM's brief and review direct. No requirement ID was added, renumbered or retired.
+
+| Source | What changed | Where |
+|---|---|---|
+| Roadmap A1, ADR 0030 | Start on Expo SDK 58; the platform floor is iOS 16.4 and Android `minSdk` 24 | D4, §18.1, §18.2, §22, Q3 |
+| A2, ADR 0072 | The API is built now, in this monorepo, contract first; running costs start in Phase 0 | Header, D5, §7.14, §18.3, §19, §23, §24, Q7 |
+| A3, ADR 0073 | A revocable server-side session and a device-held secret replace access and refresh tokens | SEC-02, §18.2, §18.5, §19.2 |
+| A4, ADR 0042 | An in-process fake server replaces MSW | §18.2, §18.4, §19.6, §21.2, §22, §23 |
+| A5, ADR 0043 | A gallery route in the app replaces Storybook | §12.9, §18.2, §21.1, §22 |
+| A6, ADR 0056 | No Redis or Valkey at MVP | §19.1 |
+| A7, ADR 0041 | A client driven by the endpoint registry validates every response; `hc` only in the admin console | D5, §18.2, §18.3, §23 |
+| A8, ADR 0035 | The timer ring is SVG; Skia draws confetti and share cards only | §18.2 |
+| A9, ADR 0074 | Roadmap §5 sets the calendar; §22 keeps the scope | Conventions, §22, §23, §24 |
+| A10, ADR 0075 | Citations of an earlier codebase's ADRs 0008 to 0012 replaced or removed | 24 places from the conventions to §21 |
+| A11, ADR 0076 | ONB-06 unchanged; age assurance is an open question for counsel | §7.1, Q10 |
+| A12, ADR 0077 | The name and mascot are decided in DS-01 | Header, §22, Q1 |
+| A13, ADR 0078 | At least 5 people try the prototype before G1 | §22 |
+| ADR 0002 | Shared packages are unit-tested with Vitest | §18.2, §21.1 |
+| ADR 0003 | No limit on time-zone changes | STK-03 |
+| ADR 0004 | Qualifying sessions, freezes, best streak, the level curve, session and Practice XP, the offline cap, the goal ring | STK-01, STK-04, §6.3, XP-01 to XP-04, §6.4, PLAY-02 |
+| ADRs 0008, 0022 | Inline links; the alt text and transcript a device renders are the block's | §11.1, §11.3 |
+| ADR 0024 (S1, S5) | The Global Daily's body has its own URL; the client sends its UTC offset | §10.1, §19.2, §19.3 |
+| ADR 0020 | A question type is a registry module of schemas and a grader; a question carries a `key` | QT-01, §11.1 |
+| ADR 0021 R3 (Proposed; PM ruling, 2026-11-23) | The first correct answer in a row earns no combo; the n-th earns min(10 × (n − 1), 50) | §10.5 |
+| ADR 0024 S13 (Proposed; PM ruling, 2026-11-23) | `/config` carries no daily-set metadata | §19.2 |
+| Roadmap O-5 and §9 | Q2's markets are needed by FND-04; an upgrade window in each phase | §23, §25 |
+| §25 | A State column: Q1, Q3 and Q7 decided, Q10 added | §25 |
+| Owner's ruling, 2026-11-21 (EG-33) | Typed answers are exact by default | QT-03 |
+| ADRs 0036, 0045, 0048, 0050 to 0062, 0065, 0068 to 0071 | Lists, monitoring, lint, CI, the API stack, media variants, generated usernames, the admin console, tests | D3, ONB-07, §7.14, §11.1, §15.3, §18.2, §18.6, §19.1, §20, §21 |
+| Roadmap §3.2, §4.2, §4.3 and the DS-04 and FE-15 rows | The mascot stays static until Rive suits Unistyles; the repository layout; server re-grading; the four `DailyCard` states; Continue for any resumable session | §9.1, §10.1, §10.6, §12.8, §12.9, §18.2 to §18.4 |
+| Roadmap rows ENG-02, FE-02, FE-04, FE-05, FE-15, FND-07, DS-03 and BE-06 | QT-01's split between the engine and the app; the question's `key`; the outbox before the first send; get-or-create per source; contrast in all three themes; what P0 builds; Practice in the MVP; staging before production; best streak as a high-water mark | §6.3, QT-01, §10.1, §10.2, §11.1, §12.2, A11Y-06, OFF-01, §19.3, §19.5, §21.2, §22, §23, Appendix A |

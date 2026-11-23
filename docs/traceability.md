@@ -45,7 +45,7 @@ Every requirement the spec marks for the MVP, and the ticket or tickets in `docs
 | ONB-04 | Apple, Google, email magic link | BE-16, FE-11 | todo |
 | ONB-05 | Guest upgrade keeps progress | BE-16, FE-11 | todo |
 | ONB-06 | Neutral age screen; under 13 can't proceed | BE-10, FE-10 | todo |
-| ONB-07 | Username check and filter; basic avatar | BE-17, FE-11 | todo |
+| ONB-07 | Generated username; username check and filter; basic avatar | BE-17, FE-11 | todo |
 | ONB-08 | New device restores progress | BE-16, FE-11 | todo |
 | ONB-09 | Account deletion in the app | BE-17, FE-11 | todo |
 | EXP-01 | Explore: search, chips, category grid, collections | FE-14, CT-05 | todo |
@@ -62,7 +62,7 @@ Every requirement the spec marks for the MVP, and the ticket or tickets in `docs
 | PLAY-07 | Leave confirmation; resume | FE-03, FE-15 | todo |
 | QT-01 | Question types as registry modules | ENG-02, FE-04 | todo |
 | QT-02 | Deterministic graders on shared fixtures | ENG-02 | built |
-| QT-03 | `type_answer` normalization | ENG-02 | built |
+| QT-03 | `type_answer` normalization; exact by default | ENG-02, CT-02 | todo |
 | QT-04 | Rich content blocks everywhere | ENG-01, FE-04 | todo |
 | QT-05 | Keyboard and screen-reader operation | FE-04 | todo |
 | RES-01 | Results sequence | FE-12 | todo |
@@ -101,7 +101,7 @@ Every requirement the spec marks for the MVP, and the ticket or tickets in `docs
 | A11Y-03 | Reflow to the largest text sizes | DS-09, FE-02 | todo |
 | A11Y-04 | Reduce Motion; timer as text | FE-02, FE-03 | todo |
 | A11Y-05 | Colour never the only signal | DS-03, FE-02 | todo |
-| A11Y-06 | Contrast in both themes | DS-03, FE-02 | todo |
+| A11Y-06 | Contrast in all three themes | DS-03, FE-02 | todo |
 | A11Y-07 | Touch target sizes | DS-03, FE-02 | todo |
 | A11Y-08 | Untimed and Extended timing | FE-03, FE-20 | todo |
 | A11Y-09 | Alternatives to drag | FE-04 | todo |
@@ -127,7 +127,7 @@ Every requirement the spec marks for the MVP, and the ticket or tickets in `docs
 | OFF-06 | Offline indicator never blocks | FE-05 | todo |
 | OFF-07 | Query cache persisted and restored | FE-05 | todo |
 | SEC-01 | No secrets in the bundle | FND-04, QA-08 | todo |
-| SEC-02 | Tokens in SecureStore (amended: roadmap A3) | BE-03, FE-05 | todo |
+| SEC-02 | Revocable session and device secret in SecureStore (roadmap A3) | BE-03, FE-05 | todo |
 | SEC-03 | Integrity tiers enforced | BE-06, QA-08 | todo |
 | SEC-05 | Plausibility checks on Tier B | BE-06 | todo |
 | SEC-06 | 429 and `Retry-After` handled | FE-05 | todo |
