@@ -1,3 +1,7 @@
 packages:
   - apps/*
   - packages/*
+
+# One range per shared library, so packages that exchange its values can't drift apart.
+catalog:
+  zod: ^4.6.7
