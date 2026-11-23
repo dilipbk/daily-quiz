@@ -145,3 +145,4 @@ Each entry in `checks.ts` loads its library with `await import()` inside `run` a
 6. **The launched Android release APK is arm64-only**, because the all-ABI APK (187 MB) didn't fit on the emulator. The 16 KB check ran on both.
 7. **iOS was built with `expo run:ios` and no `--device` flag**, on the booted iPhone 17 Pro.
 8. **No `metro.config.js`.** Expo's default Metro configuration handles the pnpm workspace without one.
+9. **Better Auth is pinned to 1.7.23 and i18next resolves to 27.1.1**, not the newest patches: those were under pnpm's one-day minimum release age (ADR 0006).

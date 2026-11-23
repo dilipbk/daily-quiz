@@ -1,12 +1,14 @@
 # FND-05: resolved versions
 
-Generated on 2026-11-15 from `pnpm-lock.yaml` with `pnpm --filter @repo/mobile ls --depth 0 --json`. "Declared" is the range in `apps/mobile/package.json`; "Resolved" is what the lockfile installs and what the three builds in this folder were made from.
+Generated on 2026-11-15 from `pnpm-lock.yaml` with `pnpm --filter @repo/mobile ls --depth 0 --json`. "Declared" is the range in `apps/mobile/package.json`; "Resolved" is what the lockfile installs.
+
+The native builds in this folder were made from exactly these versions, with two exceptions that hold no native code: the first builds bundled Better Auth 1.7.25 and i18next 27.1.2, which pnpm's one-day minimum release age then rejected (ADR 0006). The Android release build, the web export and the iOS debug run were repeated on the versions below.
 
 ## Dependencies
 
 | Package | Declared | Resolved |
 |---|---|---|
-| `@better-auth/expo` | `1.7.25` | 1.7.25 |
+| `@better-auth/expo` | `1.7.23` | 1.7.23 |
 | `@expo/metro-runtime` | `~58.0.17` | 58.0.17 |
 | `@expo/ui` | `~58.0.28` | 58.0.28 |
 | `@formatjs/intl-locale` | `^5.4.3` | 5.4.3 |
@@ -19,7 +21,7 @@ Generated on 2026-11-15 from `pnpm-lock.yaml` with `pnpm --filter @repo/mobile l
 | `@tanstack/react-query` | `^5.107.1` | 5.107.1 |
 | `@tanstack/react-query-persist-client` | `^5.107.1` | 5.107.1 |
 | `@xstate/react` | `^6.1.0` | 6.1.0 |
-| `better-auth` | `1.7.25` | 1.7.25 |
+| `better-auth` | `1.7.23` | 1.7.23 |
 | `expo` | `~58.0.25` | 58.0.25 |
 | `expo-apple-authentication` | `~58.0.3` | 58.0.3 |
 | `expo-application` | `~58.1.2` | 58.1.2 |
@@ -48,7 +50,7 @@ Generated on 2026-11-15 from `pnpm-lock.yaml` with `pnpm --filter @repo/mobile l
 | `expo-updates` | `~58.0.22` | 58.0.22 |
 | `expo-video` | `~58.0.14` | 58.0.14 |
 | `expo-web-browser` | `~58.0.8` | 58.0.8 |
-| `i18next` | `^27.1.2` | 27.1.2 |
+| `i18next` | `^27.1.1` | 27.1.1 |
 | `i18next-icu` | `^2.7.0` | 2.7.0 |
 | `intl-messageformat` | `^12.1.5` | 12.1.5 |
 | `posthog-react-native` | `4.86.0` | 4.86.0 |
@@ -78,6 +80,7 @@ Generated on 2026-11-15 from `pnpm-lock.yaml` with `pnpm --filter @repo/mobile l
 | `@react-native/jest-preset` | `0.88.1` | 0.88.1 |
 | `@testing-library/react-native` | `^14.1.0` | 14.1.0 |
 | `@types/react` | `~19.3.0` | 19.3.0 |
+| `babel-preset-expo` | `~58.0.25` | 58.0.25 |
 | `jest` | `^30.5.2` | 30.5.2 |
 | `jest-expo` | `~58.0.14` | 58.0.14 |
 | `test-renderer` | `^1.3.1` | 1.3.1 |
