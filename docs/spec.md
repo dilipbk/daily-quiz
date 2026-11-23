@@ -12,7 +12,7 @@
 **Conventions**
 - **must** = required for the phase. **should** = strongly recommended. **may** = optional.
 - **Phases:** **P0** foundations, **MVP**, **V1**, **V2**, **V3** (see §22).
-- Values marked *(tunable)* are served by remote config so they can change without a release. A change applies to quizzes that start after it arrives; a running or resumed quiz keeps the values it started with (ADR 0012).
+- Values marked *(tunable)* are served by remote config so they can change without a release. A change applies to quizzes that start after it arrives; a running or resumed quiz keeps the values it started with.
 - Requirement IDs (for example `DLY-01`) are stable. Reference them in tickets, commits and tests.
 
 ---
@@ -184,10 +184,10 @@ These are tie-breakers, in priority order.
 | DLY-01 | One Global Daily set per calendar date: 8 questions *(tunable)*, identical for every user, spanning ≥ 5 domains, ordered easy → hard (3 easy / 3 medium / 2 hard *(tunable)*). | MVP |
 | DLY-02 | Unlocks at 00:00 in the user's local time zone. The set for date D is the same everywhere. | MVP |
 | DLY-03 | One scored attempt per day. After completion, it may be replayed in practice mode with no XP. | MVP |
-| DLY-04 | The Today card has four states: **available**; **in progress** (the answers so far and **Continue**, until the end of the daily's date; ADR 0010); **completed** (score, result grid, friends' results from V1); **next unlock** (countdown). | MVP |
+| DLY-04 | The Today card has four states: **available**; **in progress** (the answers so far and **Continue**, until the end of the daily's date; §10.6); **completed** (score, result grid, friends' results from V1); **next unlock** (countdown). | MVP |
 | DLY-05 | Completion produces a spoiler-free share card: a branded **image** (score, result grid, category colors) and a **text** version (symbol grid plus link). | MVP |
 | DLY-06 | After completion, show the global percentile (MVP) and friends' scores (V1). There is no global Daily leaderboard. | MVP / V1 |
-| DLY-07 | Today's and tomorrow's sets are prefetched for offline play (§16, ADR 0011). | MVP |
+| DLY-07 | Today's and tomorrow's sets are prefetched for offline play (§16). | MVP |
 | DLY-08 | Global Daily uses only editorially reviewed questions: never unreviewed UGC, never unreviewed AI output. | MVP |
 
 ### 6.2 Daily 5 (`D5`)
@@ -307,7 +307,7 @@ These are tie-breakers, in priority order.
 | PLAY-04 | Lifelines (50/50, skip, +10 s) work in casual modes only. They are disabled in dailies, challenges and live events. | V1 |
 | PLAY-05 | A question can be reported from its explanation step (wrong answer, unclear, offensive, other). | MVP |
 | PLAY-06 | Every question has an explanation: why the answer is right, plus source link(s). | MVP |
-| PLAY-07 | Leaving mid-quiz asks for confirmation. Progress in non-competitive modes is kept for resuming. The Global Daily counts as non-competitive here: leaving keeps the attempt until the end of its date (ADR 0010). | MVP |
+| PLAY-07 | Leaving mid-quiz asks for confirmation. Progress in non-competitive modes is kept for resuming. The Global Daily counts as non-competitive here: leaving keeps the attempt until the end of its date (§10.6). | MVP |
 
 ### 7.4 Question types (`QT`)
 
@@ -344,7 +344,7 @@ These are tie-breakers, in priority order.
 | RES-02 | Actions: **Next quiz** (primary, to keep momentum), Review answers, Share, Challenge a friend. | MVP |
 | RES-03 | The review shows every question with the user's answer, the correct answer, the explanation, sources and a Report option. | MVP |
 | RES-04 | The store review prompt appears only after positive moments (7-day streak, perfect score) and respects platform limits. | V1 |
-| RES-05 | If results are waiting to sync, show a subtle pending indicator, on the results and on Today's daily card (ADR 0011). Never block the user. | MVP |
+| RES-05 | If results are waiting to sync, show a subtle pending indicator, on the results and on Today's daily card (OFF-03). Never block the user. | MVP |
 
 ### 7.6 Profile and stats (`PRF`)
 
@@ -551,7 +551,7 @@ Modules are ordered by urgency. Modules with nothing to show collapse.
 3. **Global Daily card:** in one of the DLY-04 states.
 4. **Daily 5 card.**
 5. **Daily goal ring.**
-6. **Continue:** resume an interrupted session other than the Global Daily, such as an Explore quiz or the Daily 5, once those exist. An unfinished Global Daily shows as Continue on its own card instead (DLY-04, ADR 0010).
+6. **Continue:** resume an interrupted session other than the Global Daily, such as an Explore quiz or the Daily 5, once those exist. An unfinished Global Daily shows as Continue on its own card instead (DLY-04).
 7. **League mini-status** (V1) and **event banner** (V2).
 
 ### 9.2 Quiz session
@@ -577,7 +577,7 @@ Modules are ordered by urgency. Modules with nothing to show collapse.
 ```
 
 - **Timer** (timed modes): the ring in the top bar shows the seconds; a full-width bar under the top bar burns down
-  with it, and both turn to the warning color in the last 5 s. A 3-2-1 intro covers the first question (ADR 0009).
+  with it, and both turn to the warning color in the last 5 s. A 3-2-1 intro covers the first question (§10.2).
 - **Result card:** after the reveal, the explanation card replaces the answers and **Next** is pinned under it. A long
   card scrolls above Next and never pushes it off the screen (A11Y-03).
 - **Tablet, landscape:** the question zone sits on the left and the answer zone on the right.
@@ -628,7 +628,7 @@ The session is an explicit state machine (XState v5). It is independent of the U
 | State | Meaning | Exits |
 |---|---|---|
 | `loading` | Fetch or restore the session and preload the first question's assets | `LOADED` → `intro`, `FAILED` → `error` |
-| `intro` | Optional 3-2-1 countdown (timed modes) | After 3 s *(tunable)* → `presenting` (ADR 0009) |
+| `intro` | Optional 3-2-1 countdown (timed modes) | After 3 s *(tunable)* → `presenting` |
 | `presenting` | Question visible, input enabled, timer running if timed | `SUBMIT` → `locked`, `TIMEOUT` → `locked` (no answer) |
 | `locked` | Input disabled; grading (on device instantly, or awaiting the server in Tier A); lasts at least 150 ms | `GRADED` → `revealing` |
 | `revealing` | Correct/incorrect feedback: animation, haptic, sound (~600 ms) | `DONE` → `explaining` |
@@ -651,11 +651,11 @@ These events apply in every state:
   - +10 s when the question contains media or math.
 - **Extended time** (×1.5 or ×2) and **Untimed** are available in Settings (A11Y-08). Extended time doesn't raise the speed bonus, which is always measured against the Standard limit (§10.5, D13). Untimed disables the speed bonus only.
 - **Warnings:** a visual warning in the last 5 s, and one light haptic per second in the last 3 s.
-- **The session machine owns the deadline; the UI thread draws it** (ADR 0009). While a timed question is shown, the
+- **The session machine owns the deadline; the UI thread draws it** (ADRs 0035 and 0037). While a timed question is shown, the
   machine keeps one timer per moment (the warning, each tick, the timeout). The ring and bar animate a Reanimated
   shared value on the UI thread. React must not re-render on every tick; the one exception is the timer's accessible
   value while a screen reader runs.
-- **Backgrounding:** Standard, Relaxed and Practice sessions pause. Tier B dailies and challenges pause and log the pause time for plausibility checks. Tier A keeps running on the server's clock. Time while the app is closed counts the same way: a restored session pauses as of its last save (§10.6, ADR 0010).
+- **Backgrounding:** Standard, Relaxed and Practice sessions pause. Tier B dailies and challenges pause and log the pause time for plausibility checks. Tier A keeps running on the server's clock. Time while the app is closed counts the same way: a restored session pauses as of its last save (§10.6).
 
 ### 10.4 Answer rhythm
 
@@ -674,9 +674,9 @@ These events apply in every state:
 
 ### 10.6 Persistence and recovery
 
-- While a session can be resumed, each state transition saves a snapshot of it to MMKV, keyed by `sessionId` (ADR 0010). Results delete it. Today the Global Daily is the only session saved.
+- While a session can be resumed, each state transition saves a snapshot of it to MMKV, keyed by `sessionId` (ADRs 0037 and 0040). Results delete it. Today the Global Daily is the only session saved.
 - **Resuming** applies to non-Tier-A sessions only. An unfinished session can be resumed until the end of its date (for a daily) or its `expiresAt`, whichever comes first. The Global Daily offers it on Today as **Continue** (DLY-04); there's no launch prompt. A restored session opens on the pause overlay, and the time since its last save counts as pause time (§10.3).
-- **Completed sessions** go through the outbox (§16, ADR 0011). A completion is written there before its first send, so one finished offline, or cut off mid-send, syncs later under the same `Idempotency-Key`.
+- **Completed sessions** go through the outbox (§16, ADR 0040). A completion is written there before its first send, so one finished offline, or cut off mid-send, syncs later under the same `Idempotency-Key`.
 
 ### 10.7 Preloading
 
@@ -801,7 +801,7 @@ On iOS 26+, `expo-glass-effect` may be used for branded floating elements. Other
 | `callout` | 16 / 21 | Secondary content |
 | `footnote` | 13 / 18 | Metadata |
 | `caption` | 12 / 16 | Labels |
-| `countdown` | 88 / 96, bold | The 3-2-1 before a timed session (Inter, a timer: ADR 0008) |
+| `countdown` | 88 / 96, bold | The 3-2-1 before a timed session (the text face, Inter: it's a timer) |
 
 - **All text scales** with the system text size (Dynamic Type on iOS, font scale on Android). Content text is never capped; dense chrome may be capped where the platform allows it.
 - **Long questions** step down from `title2` to `title3`, never below `body`.
@@ -955,7 +955,7 @@ Breaching a budget blocks the release.
 | Tap → visual and haptic feedback | ≤ 100 ms |
 | Transition to the next question (assets preloaded) | ≤ 300 ms |
 | Frame rate in the quiz session and lists | Sustained 60 fps (120 on ProMotion); no hitch > 50 ms during reveal |
-| React renders during the timer | None per tick (§10.3); while a screen reader runs, only the timer's accessible value, once a second (ADR 0009) |
+| React renders during the timer | None per tick (§10.3); while a screen reader runs, only the timer's accessible value, once a second |
 | Memory during a session | ≤ 300 MB on low-end Android |
 | Store download size | ≤ 50 MB; alert on +10% growth per release |
 | Question image payload | ≤ 150 KB at device width (AVIF or WebP) |
@@ -987,13 +987,13 @@ Breaching a budget blocks the release.
 
 | ID | Requirement | Phase |
 |---|---|---|
-| OFF-01 | Today's and tomorrow's Global Daily and Daily 5 are prefetched whenever the device is online, each kept as its session (ADR 0011). | MVP |
+| OFF-01 | Today's and tomorrow's Global Daily and Daily 5 are prefetched whenever the device is online, each kept as its session. | MVP |
 | OFF-02 | Downloadable topic packs for offline play (a Premium perk). | V1 |
-| OFF-03 | Completed sessions go into an **outbox** on the device (MMKV, ADR 0011) with idempotency keys. They sync on launch, on reconnect and on return to the foreground, with backoff. | MVP |
+| OFF-03 | Completed sessions go into an **outbox** on the device (MMKV, ADR 0040) with idempotency keys. They sync on launch, on reconnect and on return to the foreground, with backoff. | MVP |
 | OFF-04 | The streak is credited from the completion timestamp, checked against the last known server time offset. The server validates plausibility. | MVP |
 | OFF-05 | Tier A modes are unavailable offline, and the UI says so clearly. | V2 |
 | OFF-06 | The offline indicator never blocks the user. | MVP |
-| OFF-07 | The query cache is persisted to MMKV and restored before the first render, then revalidated in the background (ADR 0011). | MVP |
+| OFF-07 | The query cache is persisted to MMKV and restored before the first render, then revalidated in the background (ADR 0038). | MVP |
 
 ---
 
@@ -1056,7 +1056,7 @@ Breaching a budget blocks the release.
 | Server state | TanStack Query v5, persisted to MMKV | |
 | UI and app state | Zustand | Settings, onboarding, preferences |
 | Key-value storage | `react-native-mmkv` v4 (+ `react-native-nitro-modules`) | |
-| Structured local data | `expo-sqlite` + Drizzle ORM (V1) | Offline packs and the mistakes cache. The outbox is in MMKV (ADR 0011). |
+| Structured local data | `expo-sqlite` + Drizzle ORM (V1) | Offline packs and the mistakes cache. The outbox is in MMKV (ADR 0040). |
 | Secrets | `expo-secure-store` | |
 | Validation and contracts | zod | Shared with the backend through `packages/contracts` |
 | Forms | react-hook-form + zod | Creator editor (V1) |
@@ -1141,7 +1141,7 @@ apps/mobile/src/
 | Server state | TanStack Query (+ MMKV persistence) | Content, profile, progress, challenges |
 | Session state | XState machine per session (+ MMKV snapshot) | The active quiz |
 | App and UI state | Zustand | Settings, onboarding progress, preferences |
-| Durable local data | MMKV now; SQLite + Drizzle from V1 | The outbox and kept dailies (MMKV, ADR 0011); offline packs and the mistakes cache (SQLite) |
+| Durable local data | MMKV now; SQLite + Drizzle from V1 | The outbox and kept dailies (MMKV, ADR 0040); offline packs and the mistakes cache (SQLite) |
 | Secrets | SecureStore | Tokens |
 
 ### 18.6 Engineering standards
@@ -1175,7 +1175,7 @@ The backend is a separate project. This section records **what the app assumes**
 | Versioned content with `ETag` / `Cache-Control` | Aggressive caching that invalidates correctly |
 | Errors as RFC 9457 problem details with a stable `code` | The app shows localized messages |
 | Short-lived access tokens with rotating refresh tokens | Secure sessions |
-| `/config` returns remote config, flags, `minAppVersion`, an optional `updateUrl` per platform and daily-set metadata (ADR 0012) | Kill switches, forced updates, tunables |
+| `/config` returns remote config, flags, `minAppVersion`, an optional `updateUrl` per platform and daily-set metadata | Kill switches, forced updates, tunables |
 | 429 responses carry `Retry-After` | Graceful backoff |
 | Timestamps in ISO 8601 UTC; the client sends its IANA time zone | Correct day boundaries |
 
@@ -1187,7 +1187,7 @@ The backend is a separate project. This section records **what the app assumes**
 | Config | `GET /config` | MVP |
 | Content | `GET /domains`, `GET /topics/:slug`, `GET /quizzes?filters&cursor`, `GET /quizzes/:id`, `GET /collections/:slug`, `GET /search?q` | MVP |
 | Dailies | `GET /daily/global?date=`, `GET /daily/personal?date=` | MVP |
-| Sessions | `POST /sessions {source}` → questions (with keys for Tier B) · `POST /sessions/:id/complete` (Tier B batch: answers, timings, pauses) · `POST /sessions/:id/answers` (Tier A, per answer) · For a daily, `POST /sessions` is get-or-create per player and date, accepts tomorrow, and expires at the end of the date (ADR 0011) | MVP / V2 |
+| Sessions | `POST /sessions {source}` → questions (with keys for Tier B) · `POST /sessions/:id/complete` (Tier B batch: answers, timings, pauses) · `POST /sessions/:id/answers` (Tier A, per answer) · For a daily, `POST /sessions` is get-or-create per player and date, accepts tomorrow, and expires at the end of the date | MVP / V2 |
 | Progress | `GET /me/progress` (XP, level, streak, freezes, goal), `GET /me/badges`, `GET /me/mistakes` | MVP / V1 |
 | Leagues | `GET /leagues/current` | V1 |
 | Challenges | `POST /challenges`, `GET /challenges?status=`, `GET /challenges/:code`, `POST /challenges/:code/accept` | MVP |
@@ -1228,11 +1228,11 @@ The backend is a separate project. This section records **what the app assumes**
   - 100-day streak;
   - frozen streak;
   - league promotion;
-  - expired challenge (with the challenges ticket, ADR 0012);
+  - expired challenge;
   - offline;
   - slow network;
   - server errors;
-  - forced update (ADR 0012).
+  - forced update.
 
 ---
 
@@ -1288,7 +1288,7 @@ The backend is a separate project. This section records **what the app assumes**
   3. **Phased release** on the App Store and a **staged rollout** on Google Play.
 - **OTA updates:**
   - Use EAS Update channels (`preview`, `production`) for JavaScript and asset fixes only, with fingerprint runtime versions and a documented rollback.
-  - Remote-config kill switches exist, plus a forced-update screen below `minAppVersion`. It takes over at the next safe moment, never during a quiz or its results, and goes by the last config the device saw, offline too. Update opens the server's `updateUrl`, or the store (ADR 0012).
+  - Remote-config kill switches exist, plus a forced-update screen below `minAppVersion`. It takes over at the next safe moment, never during a quiz or its results, and goes by the last config the device saw, offline too. Update opens the server's `updateUrl`, or the store.
 - **Environments:** `development` (mocks or a local API), `preview` (staging), `production`. Configuration lives in `app.config.ts` plus EAS environment variables, with no secrets in the client.
 - **Cadence:** a native release every 2–4 weeks, and OTA updates as needed.
 
