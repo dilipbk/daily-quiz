@@ -101,7 +101,7 @@ Every requirement the spec marks for the MVP, and the ticket or tickets in `docs
 | A11Y-03 | Reflow to the largest text sizes | DS-09, FE-02 | todo |
 | A11Y-04 | Reduce Motion; timer as text | FE-02, FE-03 | todo |
 | A11Y-05 | Colour never the only signal | DS-03, FE-02 | todo |
-| A11Y-06 | Contrast in both themes | DS-03, FE-02 | todo |
+| A11Y-06 | Contrast in all three themes | DS-03, FE-02 | todo |
 | A11Y-07 | Touch target sizes | DS-03, FE-02 | todo |
 | A11Y-08 | Untimed and Extended timing | FE-03, FE-20 | todo |
 | A11Y-09 | Alternatives to drag | FE-04 | todo |

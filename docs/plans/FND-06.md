@@ -18,6 +18,7 @@ The plan below is as approved. These are the places where what was built differs
 2. **§12.8's mascot line changed with §18.2's**, for the same reason (roadmap §3.2); the plan named only §18.2.
 3. **§21.1 gained an "API" row** (Vitest against real Postgres, ADR 0065), and the conventions gained one line: ADR numbers refer to `docs/adr/`, and roadmap §3.3 wins where the two disagree (as `CLAUDE.md` says).
 4. **§11.3's `link` is inline content, not a block row.** ADR 0008 makes it an inline node inside text, so it is described above the table.
+5. **The independent review led to a second round** (commit "address the independent review"). The reviewer found 25 places against the roadmap or the spec itself, most of them in text 1.0 already had and the plan's sweep missed because they disagree with a ticket row of the roadmap, not with §3.3 or an ADR. 22 are fixed. Three need a ruling and are returned to the PM: Untimed's speed bonus against FE-20's "the timer setting never changes a score"; the screen-reader exception to "no React render per tick" (roadmap §7, FE-03); and the success-metric gate labels in §3 against §22. The convention line about precedence that item 3 added was removed: it said §3.3 wins, while the roadmap's header says the roadmap wins.
 
 ## What I found before planning
 
