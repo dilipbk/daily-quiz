@@ -5,12 +5,18 @@
   "description": "Question-type schemas, graders, answer normalization and scoring.",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./fixtures": "./src/fixtures/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tests/node"
+  },
+  "dependencies": {
+    "@repo/content-blocks": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@repo/config": "workspace:*"
+    "@repo/config": "workspace:*",
+    "fast-check": "^4.10.2"
   }
 }
