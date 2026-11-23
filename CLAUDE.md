@@ -68,4 +68,5 @@ The roadmap's owner column decides who does a ticket; this table shows each role
 
 - One ticket, one branch, one pull request: `<type>/<ticket-id>-<slug>`, with conventional commits.
 - Tickets that touch the same files run one at a time.
-- Status in `docs/traceability.md` moves to `built` in the ticket's pull request. Only the PM sets `verified`.
+- A row in `docs/traceability.md` moves to `built` in the pull request of the last ticket listed on it; until then it stays `todo`. Only the PM sets `verified`.
+- The PM reserves ADR numbers per ticket, because parallel branches have collided twice. Take yours from the register in `docs/adr/README.md`, and ask the PM when the ticket has none.
