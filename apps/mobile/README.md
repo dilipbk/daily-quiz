@@ -15,6 +15,11 @@ pnpm exec expo run:ios                        # boot a simulator first; don't pa
 JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home \
   pnpm exec expo run:android --variant debug  # start an emulator first
 pnpm run web:export && pnpm exec expo serve   # web: export, then serve dist/
+
+# Release builds, which need no dev server:
+pnpm exec expo run:ios --configuration Release
+JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home \
+  pnpm exec sh -c 'cd android && ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a'
 ```
 
 You need Xcode 26.4 or later with CocoaPods, and JDK 17 with the Android SDK (Gradle fetches the platform and build-tools it needs).
@@ -23,7 +28,8 @@ Known rough edges on Expo CLI 58.1.20:
 
 - `expo run:android` builds and installs, then fails its own launch step. Start the dev server with `pnpm start`, then open the app by hand:
   `adb reverse tcp:8081 tcp:8081 && adb shell am start -a android.intent.action.VIEW -d "dailyquiz://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"`.
-- After changing `app.config.ts` or a native dependency, run `expo prebuild --clean` again.
+- After changing `app.config.ts` or any dependency, run `expo prebuild --clean` again: Gradle doesn't notice a changed dependency and reuses the old JavaScript bundle.
+- The smoke report is also logged, one `[smoke]` line per check: `adb logcat -s ReactNativeJS`, or `xcrun simctl spawn booted log stream --level info --predicate 'eventMessage CONTAINS "[smoke]"'`.
 
 ## Checks
 

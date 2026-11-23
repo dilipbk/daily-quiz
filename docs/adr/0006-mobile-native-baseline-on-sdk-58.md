@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | Proposed |
-| **Date** | 2026-11-15 |
+| **Date** | 2026-11-15, updated 2026-11-23 |
 | **Ticket** | `FND-05` (local half) |
 | **Requirements** | Spec §18.2; roadmap §3.1 (mobile table), §9 ("A library isn't ready for React Native 0.88") |
 
@@ -11,12 +11,13 @@
 
 Roadmap §3.1 lists the app's libraries with versions checked on 2026-11-14, and §9 names the risk that some don't yet work on React Native 0.88. Several libraries make no statement about 0.88, and in a few places the library's own documentation disagrees with the version Expo pins for SDK 58.
 
-FND-05 built all of them together in `apps/mobile` and ran each one on a device. On 2026-11-15, with Expo 58.0.25, React Native 0.88.1, React 19.3.0, Xcode 26.6, JDK 17.0.19, NDK 27.1.12297006 and Node 26.13.1:
+FND-05 built all of them together in `apps/mobile` and ran each one on a device, with Expo 58.0.25, React Native 0.88.1, React 19.3.0, Xcode 26.6, JDK 17.0.19, NDK 27.1.12297006 and Node 26.13.1:
 
-- iOS debug build on an iPhone 17 Pro simulator (iOS 26.5): 40 checks pass.
-- Android debug and release builds on an API 36 emulator: 39 pass, 1 skipped (Sign in with Apple is iOS only). The release APK ran with Metro stopped.
-- Web export with `web.output: "server"`, served and loaded in a browser: 31 pass, 9 skipped (native-only libraries).
+- iOS on an iPhone 17 Pro simulator (iOS 26.5): the development build on 2026-11-15, 40 checks pass; a release build of the final code on 2026-11-23, 42 pass.
+- Android on an API 36 emulator: the development build on 2026-11-15, 39 pass and 1 skipped (Sign in with Apple is iOS only); a release build of the final code on 2026-11-23, 41 pass and 1 skipped. The release APKs ran with Metro stopped.
+- Web export with `web.output: "server"`, served and loaded in a browser on 2026-11-23: 33 pass, 9 skipped (native-only libraries).
 - The Android release APK passes the 16 KB page-size check.
+- On Hermes, in the release builds on both platforms, `@repo/quiz-engine`'s 127 shared fixtures all pass and `@repo/game-rules` returns the same local dates as Node 26.13.1 for a 45-minute offset, +14:00 and both 2026 clock changes in Los Angeles, and throws `RangeError` for an unknown zone. That answers the check ADR 0005 asked for.
 
 The commands, logs, screenshots and per-library results are in `docs/plans/FND-05-evidence/`. Every resolved version is in `docs/plans/FND-05-evidence/versions.md`, generated from the lockfile.
 
@@ -58,6 +59,8 @@ What later tickets must know, all found by running the shell:
 - **Never `await import('react-native')`.** Enumerating the module touches its deprecated getters and throws on iOS (`new NativeEventEmitter()` requires a non-null argument). Import from it statically.
 - **pnpm and Babel.** `babel-preset-expo` must be a dev dependency of the app. `babel.config.js` names it, and under pnpm's isolated `node_modules` a plain Gradle release build (which is what EAS runs) can't resolve it otherwise: `:app:createBundleReleaseJsAndAssets` fails with "Cannot find module 'babel-preset-expo'". `expo run:android` hides the problem because Expo CLI bundles the JavaScript itself. The same rule applies to any Babel plugin the config names.
 - **Release age.** pnpm 11 refuses packages published less than a day ago. When a too-new version is requested by name it installs it anyway and quietly writes a `minimumReleaseAgeExclude` entry into `pnpm-workspace.yaml`. That happened here for Better Auth 1.7.25 and i18next 27.1.2; the entries were removed and the versions moved back to 1.7.23 and 27.1.1. Check `pnpm-workspace.yaml` in the diff after adding a dependency, and take the newest version that is at least a day old.
+- **Stale bundles.** Gradle's JavaScript bundle task tracks the app's own files, not `node_modules`. After a dependency changes, a release build can report the bundle `UP-TO-DATE` and ship the old code. Run `expo prebuild --clean`, or Gradle with `--rerun-tasks`.
+- **Expo's pins move inside an SDK.** Between 2026-11-15 and 2026-11-23 the pin for `expo-web-browser` went from ~58.0.8 to ~58.1.0. Run `expo install --check` before a release build and take what it asks for with `expo install --fix`.
 - **Install scripts.** pnpm 11 fails the install until each script is decided. `@sentry/cli` and `@parcel/watcher` are set to `false` in `pnpm-workspace.yaml`; the EAS half turns `@sentry/cli` on when source-map upload is wired.
 - **Expo CLI on this setup.** `expo run:ios --device "<simulator name>"` and `expo run:android`'s launch step both misbehave (details in the evidence README); neither affects the build.
 - `expo-updates` reports `isEnabled: true` inside a development build even with `updates.enabled: false`, because the development client loads through it. The release build is the one to read.

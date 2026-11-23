@@ -1,10 +1,12 @@
-[smoke] web: 31 pass, 0 fail, 9 skipped
+[smoke] web: 33 pass, 0 fail, 9 skipped
 [smoke] pass | JavaScript engine | browser engine
 [smoke] pass | Unicode property escapes (regex literals, u flag) | \p{L} \p{M} \p{Z} \p{Cc} \p{Cf} \p{Cs}
 [smoke] pass | Object.hasOwn | own key true, inherited key false
 [smoke] pass | Array.prototype.at | at(-1) is 'c'
 [smoke] pass | String.prototype.normalize (NFD) | 'é' in NFD has length 2
 [smoke] pass | Intl.DateTimeFormat with a time zone | Kathmandu 01/02/2026, Los Angeles 12/31/2025
+[smoke] pass | game-rules localDateOf: offsets, DST days, unknown zones (ENG-03) | 2026-01-02 2026-06-16 2026-03-07 2026-03-08 2026-03-08 2026-03-09 2026-10-31 2026-11-01 2026-11-01 2026-11-02; unknown zone: RangeError; empty zone: RangeError
+[smoke] pass | quiz-engine shared fixtures (ENG-02) | 127 fixtures ran, 0 failed
 [smoke] pass | zod 4 | strictObject and discriminatedUnion accept valid, reject invalid
 [smoke] pass | Expo SDK and React Native | SDK 58.0.0
 [smoke] skipped | expo-dev-client | not on web

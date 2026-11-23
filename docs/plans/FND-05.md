@@ -146,3 +146,6 @@ Each entry in `checks.ts` loads its library with `await import()` inside `run` a
 7. **iOS was built with `expo run:ios` and no `--device` flag**, on the booted iPhone 17 Pro.
 8. **No `metro.config.js`.** Expo's default Metro configuration handles the pnpm workspace without one.
 9. **Better Auth is pinned to 1.7.23 and i18next resolves to 27.1.1**, not the newest patches: those were under pnpm's one-day minimum release age (ADR 0006).
+10. **`main` was merged in on 2026-11-23** (80 commits). At the PM's request the shell then took `@repo/quiz-engine` and `@repo/game-rules` as workspace dependencies, and the smoke screen runs `runSharedFixtures()` and `localDateOf` on Hermes. `zod` comes from the workspace catalog.
+11. **Release builds on both platforms** replaced the debug builds as the evidence for the final code: iOS with `expo run:ios --configuration Release` on the simulator, Android with plain Gradle. The development builds are from 2026-11-15.
+12. **`expo-web-browser` moved to Expo's new pin** (~58.1.0) before those builds.

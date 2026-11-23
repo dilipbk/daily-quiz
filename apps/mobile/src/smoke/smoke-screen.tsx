@@ -23,15 +23,12 @@ export function SmokeScreen() {
       ])
       .then((finished) => {
         // The same report as text, for the build evidence: Metro's log in a debug build,
-        // `adb logcat -s ReactNativeJS` or Console.app in a release build.
-        console.info(
-          [
-            `[smoke] ${currentPlatform}: ${summarise(finished)}`,
-            ...finished.map(
-              ({ status, label, detail }) => `[smoke] ${status} | ${label} | ${detail}`,
-            ),
-          ].join('\n'),
-        );
+        // `adb logcat -s ReactNativeJS` or the simulator's log stream in a release build.
+        // One line per call, because iOS cuts a log message off at 1,024 bytes.
+        console.info(`[smoke] ${currentPlatform}: ${summarise(finished)}`);
+        for (const { status, label, detail } of finished) {
+          console.info(`[smoke] ${status} | ${label} | ${detail}`);
+        }
         if (current) setResults(finished);
       })
       .catch(() => undefined);

@@ -56,7 +56,7 @@
     "expo-system-ui": "~58.0.7",
     "expo-updates": "~58.0.22",
     "expo-video": "~58.0.14",
-    "expo-web-browser": "~58.0.8",
+    "expo-web-browser": "~58.1.0",
     "i18next": "^27.1.1",
     "i18next-icu": "^2.7.0",
     "intl-messageformat": "^12.1.5",
