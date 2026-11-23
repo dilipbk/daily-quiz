@@ -19,13 +19,15 @@ describe('hermes probes', () => {
     expect(probeObjectHasOwn()).toBe('own key true, inherited key false');
     expect(probeArrayAt()).toBe("at(-1) is 'c'");
     expect(probeNormalize()).toBe("'é' in NFD has length 2");
-    expect(probeDateTimeFormat()).toBe('Kathmandu 01/02/2026, Los Angeles 12/31/2025');
+    expect(probeDateTimeFormat()).toBe(
+      'Kathmandu 01/02/2026, Los Angeles 12/31/2025; Intl with an unknown zone: RangeError; with an empty zone: RangeError',
+    );
     expect(probeZod()).toContain('strictObject');
   });
 
   it('dates the clock-change days and refuses unknown zones through game-rules', () => {
     expect(probeLocalDates()).toBe(
-      '2026-01-02 2026-06-16 2026-03-07 2026-03-08 2026-03-08 2026-03-09 2026-10-31 2026-11-01 2026-11-01 2026-11-02; unknown zone: RangeError; empty zone: RangeError',
+      '2026-01-01 2026-01-02 2026-06-16 2026-03-07 2026-03-08 2026-03-08 2026-03-09 2026-10-31 2026-11-01 2026-11-01 2026-11-02; unknown zone: RangeError; empty zone: RangeError',
     );
   });
 

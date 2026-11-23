@@ -23,13 +23,12 @@ export default defineConfig(
     },
   },
   {
-    // Babel, Metro and Jest load the app's config files as CommonJS.
+    // Babel and Jest load the app's config files as CommonJS.
     files: ['apps/mobile/*.config.js'],
     languageOptions: {
       sourceType: 'commonjs',
-      globals: { module: 'writable', require: 'readonly', __dirname: 'readonly' },
+      globals: { module: 'writable' },
     },
-    rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
     // Graders and scoring are pure (ENG-02): no clock, no randomness, no locale, no platform, no module state.

@@ -6,12 +6,13 @@ import { z } from 'zod';
 // run on V8, the app runs on Hermes, so each feature is evaluated here on the device.
 // The regular expressions are literals on purpose: that is how the packages write them.
 
+// Samples are written as escapes: several of these characters are invisible in an editor.
 const unicodeClasses: readonly (readonly [name: string, pattern: RegExp, sample: string])[] = [
-  ['L', /^\p{L}+$/u, 'héllo'],
-  ['M', /\p{M}/u, 'é'],
-  ['Z', /\p{Z}/u, ' '],
+  ['L', /^\p{L}+$/u, 'h\u00E9llo'],
+  ['M', /\p{M}/u, 'e\u0301'],
+  ['Z', /\p{Z}/u, '\u00A0'],
   ['Cc', /\p{Cc}/u, '\u0007'],
-  ['Cf', /\p{Cf}/u, '​'],
+  ['Cf', /\p{Cf}/u, '\u200B'],
   ['Cs', /\p{Cs}/u, '\uD800'],
 ];
 
@@ -69,11 +70,25 @@ const localDate = (timeZone: string, instant: Date): string =>
     day: '2-digit',
   }).format(instant);
 
-/** The local-day arithmetic game-rules depends on (ENG-03): the actual strings are always shown. */
+const thrownName = (act: () => unknown): string => {
+  try {
+    return `returned ${String(act())}`;
+  } catch (thrown) {
+    return thrown instanceof Error ? thrown.name : typeof thrown;
+  }
+};
+
+/**
+ * The formatter call game-rules makes (ENG-03, ADR 0005), straight from the runtime's Intl.
+ * The actual strings are always shown, and so is what the runtime itself does with a zone it
+ * doesn't know and with an empty one: `localDateOf` hides that behind its own `RangeError`.
+ */
 export function probeDateTimeFormat(): string {
   const kathmandu = localDate('Asia/Kathmandu', new Date(Date.UTC(2026, 0, 1, 18, 30)));
   const losAngeles = localDate('America/Los_Angeles', new Date(Date.UTC(2026, 0, 1, 7, 59)));
-  const actual = `Kathmandu ${kathmandu}, Los Angeles ${losAngeles}`;
+  const unknownZone = thrownName(() => localDate('Mars/Olympus_Mons', new Date(0)));
+  const emptyZone = thrownName(() => localDate('', new Date(0)));
+  const actual = `Kathmandu ${kathmandu}, Los Angeles ${losAngeles}; Intl with an unknown zone: ${unknownZone}; with an empty zone: ${emptyZone}`;
   if (kathmandu !== '01/02/2026' || losAngeles !== '12/31/2025') {
     throw new Error(`${actual}; expected 01/02/2026 and 12/31/2025`);
   }
@@ -84,10 +99,12 @@ const utc = (year: number, month: number, day: number, hour: number, minute: num
   Date.UTC(year, month - 1, day, hour, minute);
 
 // What game-rules needs from the runtime's Intl (ADR 0005), through its own `localDateOf`:
-// a 45-minute offset, the +14:00 zone, and the minute on each side of local midnight on the
-// days Los Angeles changes its clocks in 2026. Expected values are what Node 26.13.1 gives.
+// the minute on each side of midnight in Kathmandu (UTC+5:45, so 18:15 UTC and no other
+// quarter hour), the +14:00 zone, and the minute on each side of local midnight on the days
+// Los Angeles changes its clocks in 2026. Expected values are what Node 26.13.1 gives.
 const localDateCases: readonly (readonly [zone: string, instant: number, expected: string])[] = [
-  ['Asia/Kathmandu', utc(2026, 1, 1, 18, 30), '2026-01-02'],
+  ['Asia/Kathmandu', utc(2026, 1, 1, 18, 14), '2026-01-01'],
+  ['Asia/Kathmandu', utc(2026, 1, 1, 18, 15), '2026-01-02'],
   ['Pacific/Kiritimati', utc(2026, 6, 15, 10, 30), '2026-06-16'],
   ['America/Los_Angeles', utc(2026, 3, 8, 7, 59), '2026-03-07'],
   ['America/Los_Angeles', utc(2026, 3, 8, 8, 0), '2026-03-08'],
@@ -98,14 +115,6 @@ const localDateCases: readonly (readonly [zone: string, instant: number, expecte
   ['America/Los_Angeles', utc(2026, 11, 2, 7, 59), '2026-11-01'],
   ['America/Los_Angeles', utc(2026, 11, 2, 8, 0), '2026-11-02'],
 ];
-
-const thrownName = (act: () => unknown): string => {
-  try {
-    return `returned ${String(act())}`;
-  } catch (thrown) {
-    return thrown instanceof Error ? thrown.name : typeof thrown;
-  }
-};
 
 export function probeLocalDates(): string {
   const actual = localDateCases.map(([zone, instant]) =>

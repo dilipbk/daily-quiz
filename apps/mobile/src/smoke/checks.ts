@@ -1,12 +1,19 @@
 import { Platform as ReactNativePlatform, TurboModuleRegistry } from 'react-native';
 import { createActor, createMachine } from 'xstate';
 
+import icon from '../../assets/icon.png';
 import { loadSkia } from './load-skia';
 import type { Check, Platform } from './run-checks';
 
-// One check per planned library (roadmap §3.1, spec §18.2). Each loads its library inside
-// `run` with a dynamic import and makes one real call, so a native module that didn't link
-// shows as one failed row instead of taking the whole screen down.
+// One check per installed library (roadmap §3.1, spec §18.2). Each loads its library inside
+// `run` with a dynamic import, so a native module that didn't link shows as one failed row
+// instead of taking the whole screen down.
+//
+// Where a call is safe with nobody at the device, the check makes one and reports what came
+// back. Where it isn't, the check only imports the library and its detail ends in "loaded":
+// the components that render-strip.tsx renders instead (NativeTabs, Expo UI, symbols, the
+// gesture detector, SVG, FlashList, expo-image), expo-web-browser outside Android, and the
+// two hook libraries. docs/plans/FND-05-evidence/README.md lists them.
 
 const everywhere: readonly Platform[] = ['ios', 'android', 'web'];
 const native: readonly Platform[] = ['ios', 'android'];
@@ -110,7 +117,13 @@ const frameworkChecks: readonly Check[] = [
     id: 'expo-dev-client',
     label: 'expo-dev-client',
     platforms: native,
-    run: async () => expectDefined('dev client', await import('expo-dev-client')),
+    run: async () => {
+      const DevClient = await import('expo-dev-client');
+      // Registering no items still reaches the dev menu's native module in a development
+      // build. A release build leaves the dev client out, and the call does nothing there.
+      await DevClient.registerDevMenuItems([]);
+      return 'registered an empty dev-menu list';
+    },
   },
   {
     id: 'expo-router',
@@ -353,8 +366,13 @@ const platformChecks: readonly Check[] = [
     id: 'expo-audio',
     label: 'expo-audio',
     platforms: everywhere,
-    run: async () =>
-      expectDefined('createAudioPlayer', (await import('expo-audio')).createAudioPlayer),
+    run: async () => {
+      const { createAudioPlayer } = await import('expo-audio');
+      const player = createAudioPlayer(null);
+      const { volume } = player;
+      player.remove();
+      return `created and released a player (volume ${String(volume)})`;
+    },
   },
   {
     id: 'expo-image',
@@ -366,7 +384,10 @@ const platformChecks: readonly Check[] = [
     id: 'expo-video',
     label: 'expo-video',
     platforms: everywhere,
-    run: async () => expectDefined('VideoView', (await import('expo-video')).VideoView),
+    run: async () => {
+      const { isPictureInPictureSupported } = await import('expo-video');
+      return `picture in picture supported: ${String(isPictureInPictureSupported())}`;
+    },
   },
   {
     id: 'expo-sharing',
@@ -393,15 +414,27 @@ const platformChecks: readonly Check[] = [
     platforms: everywhere,
     run: async () => {
       const Updates = await import('expo-updates');
-      return `enabled: ${String(Updates.isEnabled)}, runtime ${Updates.runtimeVersion ?? 'not set'}`;
+      // Empty until the EAS half enables updates: a disabled module reports no runtime version.
+      const runtime =
+        Updates.runtimeVersion === null || Updates.runtimeVersion === ''
+          ? 'not reported'
+          : Updates.runtimeVersion;
+      return `enabled: ${String(Updates.isEnabled)}, runtime version ${runtime}`;
     },
   },
   {
     id: 'expo-web-browser',
     label: 'expo-web-browser',
     platforms: everywhere,
-    run: async () =>
-      expectDefined('openBrowserAsync', (await import('expo-web-browser')).openBrowserAsync),
+    run: async () => {
+      const WebBrowser = await import('expo-web-browser');
+      // Opening a browser needs a person to close it. Android has a call that doesn't.
+      if (currentPlatform !== 'android') {
+        return expectDefined('openBrowserAsync', WebBrowser.openBrowserAsync);
+      }
+      const { browserPackages } = await WebBrowser.getCustomTabsSupportingBrowsersAsync();
+      return `${String(browserPackages.length)} Custom Tabs browsers found`;
+    },
   },
 ];
 
@@ -473,6 +506,131 @@ const serviceChecks: readonly Check[] = [
   },
 ];
 
+// Libraries no feature uses directly yet: peers of the SDKs above, and Expo's own plumbing.
+const supportingChecks: readonly Check[] = [
+  {
+    id: 'expo-crypto',
+    label: 'expo-crypto',
+    platforms: everywhere,
+    run: async () => {
+      const Crypto = await import('expo-crypto');
+      return `random UUID of ${String(Crypto.randomUUID().length)} characters`;
+    },
+  },
+  {
+    id: 'expo-network',
+    label: 'expo-network',
+    platforms: everywhere,
+    run: async () => {
+      const Network = await import('expo-network');
+      const { type } = await Network.getNetworkStateAsync();
+      return `network type: ${String(type)}`;
+    },
+  },
+  {
+    id: 'expo-device',
+    label: 'expo-device',
+    platforms: everywhere,
+    run: async () => {
+      const Device = await import('expo-device');
+      return `model: ${Device.modelName ?? 'not reported'}`;
+    },
+  },
+  {
+    id: 'expo-application',
+    label: 'expo-application',
+    platforms: native,
+    run: async () => {
+      const Application = await import('expo-application');
+      return `application id: ${Application.applicationId ?? 'not reported'}`;
+    },
+  },
+  {
+    id: 'expo-file-system',
+    label: 'expo-file-system',
+    platforms: native,
+    run: async () => {
+      const { File, Paths } = await import('expo-file-system');
+      const file = new File(Paths.cache, 'smoke-probe.txt');
+      if (file.exists) file.delete();
+      file.create();
+      await file.write('stored');
+      const read = file.textSync();
+      file.delete();
+      if (read !== 'stored') throw new Error(`read back ${read}`);
+      return 'wrote, read and deleted a file';
+    },
+  },
+  {
+    id: 'expo-linking',
+    label: 'expo-linking',
+    platforms: everywhere,
+    run: async () => {
+      const Linking = await import('expo-linking');
+      return `app URL: ${Linking.createURL('/')}`;
+    },
+  },
+  {
+    id: 'expo-font',
+    label: 'expo-font',
+    platforms: everywhere,
+    run: async () => {
+      const Font = await import('expo-font');
+      return `a font that was never loaded is loaded: ${String(Font.isLoaded('never-loaded'))}`;
+    },
+  },
+  {
+    id: 'expo-asset',
+    label: 'expo-asset',
+    platforms: everywhere,
+    run: async () => {
+      const { Asset } = await import('expo-asset');
+      return `bundled icon is a ${Asset.fromModule(icon).type} asset`;
+    },
+  },
+  {
+    id: 'expo-system-ui',
+    label: 'expo-system-ui',
+    platforms: native,
+    run: async () => {
+      const SystemUI = await import('expo-system-ui');
+      return `root background: ${String(await SystemUI.getBackgroundColorAsync())}`;
+    },
+  },
+  {
+    id: 'expo-splash-screen',
+    label: 'expo-splash-screen',
+    platforms: native,
+    run: async () => {
+      const SplashScreen = await import('expo-splash-screen');
+      await SplashScreen.hideAsync();
+      return 'hide requested';
+    },
+  },
+  {
+    id: 'safe-area-context',
+    label: 'react-native-safe-area-context',
+    platforms: native,
+    run: async () => {
+      const { initialWindowMetrics } = await import('react-native-safe-area-context');
+      return `top inset at launch: ${String(initialWindowMetrics?.insets.top ?? 'not reported')}`;
+    },
+  },
+  {
+    id: 'xstate-react',
+    label: '@xstate/react (imported only: its hooks need a component)',
+    platforms: everywhere,
+    run: async () => expectDefined('useMachine', (await import('@xstate/react')).useMachine),
+  },
+  {
+    id: 'react-i18next',
+    label: 'react-i18next (imported only: its hooks need a component)',
+    platforms: everywhere,
+    run: async () =>
+      expectDefined('useTranslation', (await import('react-i18next')).useTranslation),
+  },
+];
+
 export const checks: readonly Check[] = [
   ...runtimeChecks,
   ...frameworkChecks,
@@ -480,4 +638,5 @@ export const checks: readonly Check[] = [
   ...stateAndStorageChecks,
   ...platformChecks,
   ...serviceChecks,
+  ...supportingChecks,
 ];
