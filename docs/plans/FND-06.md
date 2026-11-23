@@ -1,6 +1,6 @@
 # FND-06 Spec v1.1: plan
 
-**Ticket:** FND-06 · **Status:** PLAN FOR APPROVAL, 2026-11-23 · **Owner:** PM, delegated · **Size:** M, confirmed: one file, but 13 amendments, 61 ADRs to hold it against, 24 stale citations, and requirement IDs that tests, commits and `docs/traceability.md` cite · **Branch:** `docs/FND-06-spec-v1-1`
+**Ticket:** FND-06 · **Status:** APPROVED on 2026-11-23 with the recommended defaults for P1 to P9 · **Owner:** PM, delegated · **Size:** M, confirmed: one file, but 13 amendments, 61 ADRs to hold it against, 24 stale citations, and requirement IDs that tests, commits and `docs/traceability.md` cite · **Branch:** `docs/FND-06-spec-v1-1`
 
 **Goal:** `docs/spec.md` version 1.1. No section contradicts `docs/roadmap.md` or an accepted ADR, no citation points at the earlier codebase's ADR series, and every requirement ID of 1.0 is still there.
 
@@ -9,6 +9,15 @@
 Line numbers below are those of spec 1.0 at `origin/main` `95b6fd9`.
 
 ---
+
+## Changes during the build
+
+The plan below is as approved. These are the places where what was built differs from it.
+
+1. **§19.5 is unchanged.** The sentence about our own player id went into §19.1's auth bullet instead, beside Better Auth, so it is said once.
+2. **§12.8's mascot line changed with §18.2's**, for the same reason (roadmap §3.2); the plan named only §18.2.
+3. **§21.1 gained an "API" row** (Vitest against real Postgres, ADR 0065), and the conventions gained one line: ADR numbers refer to `docs/adr/`, and roadmap §3.3 wins where the two disagree (as `CLAUDE.md` says).
+4. **§11.3's `link` is inline content, not a block row.** ADR 0008 makes it an inline node inside text, so it is described above the table.
 
 ## What I found before planning
 

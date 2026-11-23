@@ -48,6 +48,7 @@
 - [Appendix A: Glossary](#appendix-a-glossary)
 - [Appendix B: Corrections to the original brainstorm](#appendix-b-corrections-to-the-original-brainstorm)
 - [Appendix C: Sources](#appendix-c-sources)
+- [Appendix D: Changes in version 1.1](#appendix-d-changes-in-version-11)
 
 ---
 
@@ -1509,3 +1510,31 @@ The Expo facts of version 1.0 were checked on 2026-09-27 against the links below
 - EAS Workflows E2E: https://docs.expo.dev/eas/workflows/examples/e2e-tests/
 - EAS Observe GA: https://expo.dev/changelog/eas-observe-is-now-generally-available
 - Apple App Review Guidelines: https://developer.apple.com/app-store/review/guidelines/
+
+## Appendix D: Changes in version 1.1
+
+Version 1.1 (2026-11-23, ticket FND-06) brings the spec in line with roadmap v1.1 and the ADRs in `docs/adr/`. No requirement ID was added, renumbered or retired.
+
+| Source | What changed | Where |
+|---|---|---|
+| Roadmap A1, ADR 0030 | Start on Expo SDK 58; the platform floor is iOS 16.4 and Android `minSdk` 24 | D4, §18.1, §18.2, §22, Q3 |
+| A2, ADR 0072 | The API is built now, in this monorepo, contract first; running costs start in Phase 0 | Header, D5, §7.14, §18.3, §19, §23, §24, Q7 |
+| A3, ADR 0073 | A revocable server-side session and a device-held secret replace access and refresh tokens | SEC-02, §18.2, §18.5, §19.2 |
+| A4, ADR 0042 | An in-process fake server replaces MSW | §18.2, §18.4, §19.6, §21.2, §22, §23 |
+| A5, ADR 0043 | A gallery route in the app replaces Storybook | §12.9, §18.2, §21.1, §22 |
+| A6, ADR 0056 | No Redis or Valkey at MVP | §19.1 |
+| A7, ADR 0041 | A client driven by the endpoint registry validates every response; `hc` only in the admin console | D5, §18.2, §18.3, §23 |
+| A8, ADR 0035 | The timer ring is SVG; Skia draws confetti and share cards only | §18.2 |
+| A9, ADR 0074 | Roadmap §5 sets the calendar; §22 keeps the scope | Conventions, §22, §23, §24 |
+| A10, ADR 0075 | Citations of an earlier codebase's ADRs 0008 to 0012 replaced or removed | 24 places from the conventions to §21 |
+| A11, ADR 0076 | ONB-06 unchanged; age assurance is an open question for counsel | §7.1, Q10 |
+| A12, ADR 0077 | The name and mascot are decided in DS-01 | Header, §22, Q1 |
+| A13, ADR 0078 | At least 5 people try the prototype before G1 | §22 |
+| ADR 0002 | Shared packages are unit-tested with Vitest | §18.2, §21.1 |
+| ADR 0003 | No limit on time-zone changes | STK-03 |
+| ADR 0004 | Qualifying sessions, freezes, best streak, the level curve, session and Practice XP, the offline cap, the goal ring | STK-01, STK-04, §6.3, XP-01 to XP-04, §6.4, PLAY-02 |
+| ADRs 0008, 0022 | Inline links; the alt text and transcript a device renders are the block's | §11.1, §11.3 |
+| ADR 0024 (S1, S5) | The Global Daily's body has its own URL; the client sends its UTC offset | §10.1, §19.2, §19.3 |
+| Owner's ruling, 2026-11-21 (EG-33) | Typed answers are exact by default | QT-03 |
+| ADRs 0036, 0045, 0048, 0050 to 0062, 0065, 0068 to 0071 | Lists, monitoring, lint, CI, the API stack, generated usernames, the admin console, tests | D3, ONB-07, §7.14, §15.3, §18.2, §18.6, §19.1, §20, §21 |
+| Roadmap §3.2, §4.2, §4.3 and the DS-04 and FE-15 rows | The mascot stays static until Rive suits Unistyles; the repository layout; server re-grading; the four `DailyCard` states; Continue for any resumable session | §9.1, §10.1, §10.6, §12.8, §12.9, §18.2 to §18.4 |
