@@ -386,8 +386,11 @@ const platformChecks: readonly Check[] = [
     label: 'expo-video',
     platforms: everywhere,
     run: async () => {
-      const { isPictureInPictureSupported } = await import('expo-video');
-      return `picture in picture supported: ${String(isPictureInPictureSupported())}`;
+      const Video = await import('expo-video');
+      // expo-video 58.0.14 has no web implementation of this call: it throws
+      // "isPictureInPictureSupported is not a function" there.
+      if (currentPlatform === 'web') return expectDefined('VideoView', Video.VideoView);
+      return `picture in picture supported: ${String(Video.isPictureInPictureSupported())}`;
     },
   },
   {
