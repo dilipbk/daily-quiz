@@ -202,23 +202,35 @@ These are tie-breakers, in priority order.
 
 | ID | Requirement | Phase |
 |---|---|---|
-| STK-01 | The streak increments once per local calendar day when the user completes a qualifying session: either daily set, or any quiz of ≥ 5 questions. | MVP |
+| STK-01 | The streak increments once per local calendar day when the user completes a qualifying session: either daily set, or any other session of ≥ 5 questions *(tunable)*, challenges included. A Practice replay never qualifies, and the score doesn't matter. | MVP |
 | STK-02 | The server is authoritative for streak state. The client updates optimistically and reconciles. | MVP |
-| STK-03 | The day boundary is the user's local time zone at the qualifying action. Time-zone changes are credited at most once per 24 h, to prevent abuse. DST transitions must never break a streak. | MVP |
-| STK-04 | **Streak freeze:** applied automatically on a missed day; hold up to 2 *(tunable)*. Earned at milestones (MVP); bought with coins or included in Premium (V1). | MVP / V1 |
+| STK-03 | The day boundary is the user's local time zone at the qualifying action: a session is credited to the calendar date in the device's IANA time zone at the instant it completes, and to nothing else. There is no limit on time-zone changes (ADR 0003). DST transitions must never break a streak. | MVP |
+| STK-04 | **Streak freeze:** applied automatically on a missed day; hold up to 2 *(tunable)*. Earned at milestones, one per milestone *(tunable)* (MVP); bought with coins or included in Premium (V1). | MVP / V1 |
 | STK-05 | **Streak repair:** within 48 h of a break, once per 30 days *(tunable)*, for coins or as a Premium perk. | V1 |
 | STK-06 | Milestones (3, 7, 14, 30, 50, 100, 365 days) trigger a celebration and a badge. | MVP |
 | STK-07 | A streak calendar screen shows history, freezes used, and current and best streak. | V1 |
 | STK-08 | **Friend streaks:** two friends who both play on the same day keep a shared streak. | V2 |
 
+**Streak rules** (ADR 0004; every number is *(tunable)*):
+- **The day credited** is the local date when the session completes, not when it started (STK-03, OFF-04).
+- **Freezes earned:** each milestone of STK-06 grants one. A grant while holding the maximum is lost. A new player holds none. After a break, the new streak's milestones grant again.
+- **Freezes spent:** a freeze covers a missed day as soon as that day is over, and two held cover two days in a row. Freezes spent before a break stay spent.
+- **A frozen day** keeps the streak alive and doesn't add to its count.
+- **Late syncs:** the streak derives from the set of credited dates, so the order in which sessions arrive can't change it. If a missed day's session syncs later, the whole history is replayed with that day credited. The replay usually gives back the freeze that day had spent, but it can also change what followed, and the result can be lower than before.
+- **Best streak** is the longest streak in the replay. The server stores it as a high-water mark that only rises, and a milestone already celebrated is never withdrawn.
+
 ### 6.4 XP, levels, daily goal (`XP`)
 
 | ID | Requirement | Phase |
 |---|---|---|
-| XP-01 | XP is status: it is earned and never spent. Formula: 10 per completed quiz + 2 per correct answer + 10 perfect-score bonus *(tunable)*. | MVP |
-| XP-02 | Levels follow an increasing XP curve *(tunable)*. Reaching a new level triggers a celebration. | MVP |
-| XP-03 | The daily goal is user-selected (Casual / Regular / Serious = 20 / 50 / 100 XP *(tunable)*) and shown as a ring on Today. | MVP |
-| XP-04 | XP from unsynced offline sessions is capped per day *(tunable)* until validated (§10.1). | MVP |
+| XP-01 | XP is status: it is earned and never spent. Formula: 10 per completed session of any source + 2 per correct answer + 10 when every answer is correct *(tunable)*. Relaxed earns the same. | MVP |
+| XP-02 | Levels follow an increasing XP curve: going from level L to L+1 costs 20 × L XP *(tunable)*, with no top level. Reaching a new level triggers a celebration. | MVP |
+| XP-03 | The daily goal is user-selected (Casual / Regular / Serious = 20 / 50 / 100 XP *(tunable)*) and shown as a ring on Today. The ring counts all XP credited to the local day, whatever mode earned it. | MVP |
+| XP-04 | XP from sessions still in the outbox adds at most 100 *(tunable)* to a local day in the app's optimistic total. The server's total replaces it once they are validated (§10.1). | MVP |
+
+**XP rules** (ADR 0004):
+- Reaching level L takes 20 × L × (L − 1) / 2 XP. Level 2 arrives at 20 XP (a first Global Daily with five right), level 5 at 200, level 10 at 900 and level 20 at 3,800.
+- **Practice:** a replayed daily earns none (DLY-03). Any other Practice replay earns half the formula, rounded down *(tunable)* (PLAY-02).
 
 ### 6.5 Weekly leagues (`LGE`)
 
@@ -305,7 +317,7 @@ ONB-06 is unchanged in 1.1 (ADR 0076). The open question is for counsel: whether
 | ID | Requirement | Phase |
 |---|---|---|
 | PLAY-01 | Quiz detail shows title, cover, domain/topic, question count, estimated duration, difficulty, question types, creator and rating. Primary action: **Play**. Secondary: **Challenge a friend**. | MVP |
-| PLAY-02 | Play modes: **Standard** (timed, the default), **Relaxed** (untimed, no speed bonus, full XP) and **Practice** (a replay of a completed quiz, with reduced XP *(tunable)*). | MVP |
+| PLAY-02 | Play modes: **Standard** (timed, the default), **Relaxed** (untimed, no speed bonus, full XP) and **Practice** (a replay of a completed quiz: half XP, rounded down *(tunable)*; a replayed daily earns none, DLY-03). | MVP |
 | PLAY-03 | Sessions follow §10: state machine, timing, interruption handling and scoring. | MVP |
 | PLAY-04 | Lifelines (50/50, skip, +10 s) work in casual modes only. They are disabled in dailies, challenges and live events. | V1 |
 | PLAY-05 | A question can be reported from its explanation step (wrong answer, unclear, offensive, other). | MVP |
@@ -335,7 +347,7 @@ ONB-06 is unchanged in 1.1 (ADR 0076). The open question is for counsel: whether
 |---|---|---|
 | QT-01 | Each question type is a **registry module** containing: schema (zod), renderer, **grader** (a pure function shared with the server), accessibility behavior, editor form and analytics payload. Adding a type requires **no change** to the session engine. | MVP |
 | QT-02 | Graders are deterministic. They are unit-tested against shared fixtures that the app and the server both run. | MVP |
-| QT-03 | `type_answer` normalization handles case, diacritics, whitespace, punctuation, leading articles (locale-aware), accepted aliases, numeric tolerance, and typo tolerance scaled to answer length *(tunable)*. | MVP |
+| QT-03 | `type_answer` normalization handles case, diacritics, whitespace, punctuation, leading articles (locale-aware), accepted aliases and numeric tolerance. A typed answer is exact by default: it forgives no typo unless the question's author switches tolerance on for that question. Where it is on, the number of typos allowed scales with the answer's length *(tunable)*, and a number is never forgiven one (`docs/content/editorial-guidelines.md`, EG-33 to EG-36). | MVP |
 | QT-04 | Every type supports rich content blocks (§11.3) in the prompt, the options and the explanation. | MVP |
 | QT-05 | Every type can be operated with a hardware keyboard (tablets and web) and with a screen reader. | MVP |
 
@@ -619,7 +631,7 @@ As specified in EXP-01 to EXP-06. The category grid uses each category's color a
 
 - **Tier A:** answer keys are **never** sent to the device before an answer is submitted. The server controls timing, and each answer is submitted individually.
 - **Tier B:**
-  - Answer keys are included in the session payload.
+  - Answer keys are on the device: in the session payload, or for the Global Daily in its body, which every player of a date shares (§19.3).
   - On completion the server re-grades every answer with the shared engine against the session's question snapshot. Its result is authoritative; the app's is optimistic (roadmap §4.3).
   - The server also checks plausibility: answer-time distributions, impossible speeds, suspicious perfect-score patterns.
   - Offline XP is capped per day until the server validates it (XP-04).
@@ -700,6 +712,8 @@ These events apply in every state:
 | **MediaAsset** | `id`, `kind` (image, audio, svg), `url`, `width`, `height`, `placeholder` (blurhash or thumbhash), `alt` (required for images), `transcript` (required for audio), `durationMs`, `bytes` |
 | **Taxonomy** | `domain` → `topic` → `subtopic`, plus curated `tags` |
 
+A MediaAsset's own `alt` and `transcript` describe it in the media library and are where an editor's text starts. They aren't sent to a device: a device renders the block's (§11.3).
+
 ### 11.2 Versioning
 - Editing a published question or quiz creates a **new version**.
 - Sessions, challenges and stats point to the exact version played.
@@ -707,16 +721,22 @@ These events apply in every state:
 
 ### 11.3 Rich content blocks
 
-Question text is stored as **structured blocks**, never raw HTML or Markdown strings.
+Question text is stored as **structured blocks**, never raw HTML or Markdown strings (ADR 0008). Content is a flat list: a block never holds another block.
+
+**Inline content**, inside a paragraph, a quote or a list item, is text spans and links:
+- a **text span** carries up to five inline marks: bold, italic, code, subscript, superscript (never subscript with superscript);
+- a **`link`** holds text spans and one https address in canonical form (lowercase `https://` and domain; no credentials, port or IP address), which opens in the in-app browser (SEC-08). A link can't hold a link.
 
 | Block | Rendering |
 |---|---|
-| `paragraph` | Text with inline marks (bold, italic, code, subscript, superscript) |
+| `paragraph` | Inline content |
 | `math` | LaTeX source. **Rendered to SVG on the server when the question is published** (MathJax, with `mhchem` for chemistry), and displayed as SVG on the device. The editor's live preview may use an Expo DOM component with KaTeX. |
 | `code` | Source plus language, **tokenized when published**. The device renders the tokens with theme colors. |
-| `image` | A MediaAsset reference. Pinch to zoom; a placeholder shows while loading. |
-| `audio` | A MediaAsset reference. Clips ≤ 30 s, loudness-normalized, with a transcript. |
-| `quote`, `list` | Plain structural blocks |
+| `image` | A MediaAsset reference by id, with the block's own **alt text**. Pinch to zoom; a placeholder shows while loading. |
+| `audio` | A MediaAsset reference by id, with the block's own **transcript**. Clips ≤ 30 s, loudness-normalized. |
+| `quote`, `list` | Plain structural blocks holding inline content; a list holds items, not lists |
+
+**The text a device renders is the block's.** An image's alt text and an audio clip's transcript are written on the block, because the same image can need different words in two questions (ADR 0008). The published media asset a device fetches carries neither (ADR 0022).
 
 ### 11.4 Launch domains (proposed, 11)
 
@@ -1081,7 +1101,7 @@ Version 1.1 takes its versions from roadmap §3.1 and ADR 0030. Check the offici
 | Crash and performance monitoring | Sentry (`@sentry/react-native`) for crashes; EAS Observe for startup and navigation timing | Observe doesn't replace Sentry yet (ADR 0048) |
 | OTA updates | `expo-updates` + EAS Update, fingerprint runtime versions | |
 | Design workbench | A development-only gallery route in the app | Every state × theme × text size; replaces Storybook until V1 (§12.9, ADR 0043) |
-| Testing | Jest, React Native Testing Library, fast-check, Maestro | §21 |
+| Testing | Jest and React Native Testing Library for the app; Vitest for the shared packages and the API; fast-check; Maestro | §21 (ADRs 0002, 0050, 0065) |
 | CI/CD | GitHub Actions for checks and API deploys; EAS Build, Submit, Update and Workflows for the app | ADR 0071 |
 | Repository | pnpm 11 workspaces monorepo | §18.3 (ADR 0069) |
 
@@ -1198,7 +1218,7 @@ The choices and their versions are in roadmap §3.1 and ADRs 0051 to 0068.
 | A revocable server-side session, and a secret held on the device that can start a new one for the same guest (SEC-02, ADR 0073) | Secure sessions; a guest's identity outlives any session |
 | `/config` returns remote config, flags, `minAppVersion`, an optional `updateUrl` per platform and daily-set metadata | Kill switches, forced updates, tunables |
 | 429 responses carry `Retry-After` | Graceful backoff |
-| Timestamps in ISO 8601 UTC; the client sends its IANA time zone | Correct day boundaries |
+| Timestamps in ISO 8601 UTC; the client sends its IANA time zone and its UTC offset in minutes (local time minus UTC, east positive), as ADR 0024 sets out | Correct day boundaries |
 
 ### 19.3 Resource outline
 
@@ -1207,8 +1227,8 @@ The choices and their versions are in roadmap §3.1 and ADRs 0051 to 0068.
 | Auth and account | `POST /auth/guest`, provider sign-in, `POST /auth/link`, `GET/PATCH /me`, `DELETE /me`, `POST /me/export` | MVP (export V1) |
 | Config | `GET /config` | MVP |
 | Content | `GET /domains`, `GET /topics/:slug`, `GET /quizzes?filters&cursor`, `GET /quizzes/:id`, `GET /collections/:slug`, `GET /search?q` | MVP |
-| Dailies | `GET /daily/global?date=`, `GET /daily/personal?date=` | MVP |
-| Sessions | `POST /sessions {source}` → questions (with keys for Tier B) · `POST /sessions/:id/complete` (Tier B batch: answers, timings, pauses) · `POST /sessions/:id/answers` (Tier A, per answer) · For a daily, `POST /sessions` is get-or-create per player and date, accepts tomorrow, and expires at the end of the date | MVP / V2 |
+| Dailies | `GET /daily/global/:date/:contentVersion`: the Global Daily's body, public and immutable, served from the CDN (ADR 0024); `GET /daily/personal?date=` | MVP |
+| Sessions | `POST /sessions {source}` → questions (with keys for Tier B); a Global Daily session holds its `contentVersion` instead, and the app fetches the body once per version · `POST /sessions/:id/complete` (Tier B batch: answers, timings, pauses) · `POST /sessions/:id/answers` (Tier A, per answer) · For a daily, `POST /sessions` is get-or-create per player and date, accepts tomorrow, and expires at the end of the date | MVP / V2 |
 | Progress | `GET /me/progress` (XP, level, streak, freezes, goal), `GET /me/badges`, `GET /me/mistakes` | MVP / V1 |
 | Leagues | `GET /leagues/current` | V1 |
 | Challenges | `POST /challenges`, `GET /challenges?status=`, `GET /challenges/:code`, `POST /challenges/:code/accept` | MVP |
@@ -1292,8 +1312,9 @@ The choices and their versions are in roadmap §3.1 and ADRs 0051 to 0068.
 
 | Layer | Tooling | Coverage focus |
 |---|---|---|
-| Unit | Jest, fast-check (property-based) | Graders, answer normalization, scoring, **streak, time-zone and DST logic**, league math, economy |
-| Component | React Native Testing Library | Design-system components, session screen states |
+| Unit | Vitest, fast-check (property-based), for the shared packages (ADR 0002) | Graders, answer normalization, scoring, **streak, time-zone and DST logic**, league math, economy |
+| Component | Jest and React Native Testing Library (ADR 0050) | Design-system components, session screen states |
+| API | Vitest against real Postgres (ADR 0065) | Endpoints, write paths, idempotency and duplicate requests |
 | Visual | The gallery route (§12.9) | Every state × theme × text size |
 | End-to-end | Maestro on EAS Workflows | Onboarding → first quiz; Global Daily; challenge deep link; resume after interruption; complete offline → sync; account deletion; sandbox purchase (V1) |
 | Accessibility | Manual checklist (A11Y-14) | Every release |
