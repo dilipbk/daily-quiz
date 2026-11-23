@@ -1,0 +1,10 @@
+{
+  "extends": "@repo/config/tsconfig/base.json",
+  "compilerOptions": {
+    // Node runs this source as it is (type stripping, ADR 0079), so resolve imports the way Node does.
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"]
+  },
+  "include": ["src", "tests", "smoke", "migrations"]
+}
