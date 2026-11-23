@@ -27,12 +27,14 @@ export async function runMigrate({ env, dir, log }: MigrateOptions): Promise<num
     return 1;
   }
 
-  const client = new Client({
-    connectionString,
-    connectionTimeoutMillis: 10_000,
-    application_name: 'daily-quiz-migrate',
-  });
+  let client: Client | undefined;
   try {
+    // Inside the try, so even a connection string the driver can't read fails the same way.
+    client = new Client({
+      connectionString,
+      connectionTimeoutMillis: 10_000,
+      application_name: 'daily-quiz-migrate',
+    });
     await client.connect();
     const applied = await runner({
       dbClient: client,
@@ -54,7 +56,7 @@ export async function runMigrate({ env, dir, log }: MigrateOptions): Promise<num
     log(`migrate failed: ${redacted(describe(error), connectionString)}`);
     return 1;
   } finally {
-    await client.end().catch(() => undefined);
+    await client?.end().catch(() => undefined);
   }
 }
 
