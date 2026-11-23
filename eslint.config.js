@@ -1,8 +1,70 @@
 import base from '@repo/config/eslint';
 import { defineConfig } from 'eslint/config';
 
-export default defineConfig(base, {
-  languageOptions: {
-    parserOptions: { tsconfigRootDir: import.meta.dirname },
+const outsideTheEngine = [
+  'node:*',
+  'react',
+  'react-native',
+  'react-native/*',
+  'expo',
+  'expo-*',
+  'vitest',
+  'fast-check',
+];
+const outsideTheCore = ['**/types/**', '**/text/**', '**/fixtures/**', '@repo/content-blocks'];
+
+export default defineConfig(
+  base,
+  {
+    languageOptions: {
+      parserOptions: { tsconfigRootDir: import.meta.dirname },
+    },
   },
-});
+  {
+    // Graders and scoring are pure (ENG-02): no clock, no randomness, no locale, no platform, no module state.
+    files: ['packages/quiz-engine/src/**/*.ts'],
+    rules: {
+      'no-restricted-globals': ['error', 'Date', 'Intl', 'performance', 'crypto', 'globalThis'],
+      'no-restricted-properties': ['error', { object: 'Math', property: 'random' }],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'CallExpression[callee.property.name=/^(toLocaleLowerCase|toLocaleUpperCase|toLocaleString|localeCompare)$/]',
+          message: 'The engine never reads the environment locale.',
+        },
+        {
+          selector:
+            'Program > VariableDeclaration[kind!="const"], Program > ExportNamedDeclaration > VariableDeclaration[kind!="const"]',
+          message: 'No module-level mutable state.',
+        },
+        {
+          selector:
+            'Program > VariableDeclaration > VariableDeclarator > NewExpression[callee.name=/^(Map|Set|WeakMap|WeakSet)$/]',
+          message: 'No module-level caches.',
+        },
+      ],
+      'no-restricted-imports': [
+        'error',
+        { patterns: [{ group: outsideTheEngine, message: 'The engine is pure TypeScript.' }] },
+      ],
+    },
+  },
+  {
+    // The core knows no question type: a sixth type must not need an edit here.
+    files: ['packages/quiz-engine/src/core/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [...outsideTheEngine, ...outsideTheCore],
+              message: 'The core imports no question type, text helper or fixture.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+);

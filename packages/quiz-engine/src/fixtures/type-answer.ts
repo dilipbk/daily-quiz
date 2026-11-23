@@ -1,0 +1,268 @@
+import type { GradingFixture } from '../core/conformance.ts';
+import { correct, incorrect, invalid, unanswered } from '../core/module.ts';
+import type { Grade } from '../core/module.ts';
+import type { Question } from '../types/index.ts';
+import { specTypeAnswerTunables } from '../types/type-answer.ts';
+
+// Typed answers (spec QT-03): what normalization forgives, what an alias, a number and a typo
+// are worth, and the near-misses that must stay wrong. Each group is one question, named by the
+// answers its key accepts.
+
+const textQuestion = (accepted: string[], rest: { rejected?: string[]; maxTypos?: number } = {}) =>
+  ({
+    type: 'type_answer',
+    payload: { format: 'text' },
+    key: { accepted, ...rest },
+  }) satisfies Question;
+
+/** A text question that allows no typos, so only normalization can make an answer right. */
+const exactly = (accepted: string[]) => textQuestion(accepted, { maxTypos: 0 });
+
+const numberQuestion = (
+  accepted: string[],
+  numeric: { value: number; tolerance: number; units?: string[] },
+) =>
+  ({
+    type: 'type_answer',
+    payload: { format: 'number' },
+    key: { accepted, numeric },
+  }) satisfies Question;
+
+const typed = (text: unknown) => ({ type: 'type_answer', response: { text } });
+
+type Case = readonly [name: string, answer: unknown, expected: Grade];
+
+/** One fixture per row, all on the same question. The locale is English unless given. */
+const cases = (
+  question: Question,
+  rows: readonly Case[],
+  context: { locale?: string; tunables?: unknown } = {},
+): GradingFixture[] =>
+  rows.map(([name, answer, expected]) => ({
+    id: `type_answer/${name}`,
+    cites: ['QT-03'],
+    question,
+    locale: context.locale ?? 'en',
+    answer,
+    ...(context.tunables === undefined ? {} : { tunables: context.tunables }),
+    expected,
+  }));
+
+/** The spec's tunables with a Spanish article table beside the English one. */
+const withSpanishArticles = {
+  type_answer: {
+    ...specTypeAnswerTunables,
+    articles: { ...specTypeAnswerTunables.articles, es: ['el', 'la', 'los', 'las'] },
+  },
+};
+
+export const typeAnswerFixtures: readonly GradingFixture[] = [
+  ...cases(textQuestion(['Paris']), [
+    ['exact', typed('Paris'), correct()],
+    ['case-and-space', typed('  PARIS '), correct()],
+    ['diacritics', typed('París'), correct()],
+    ['punctuation', typed('Paris.'), correct()],
+    // One slip in a five-letter answer is forgiven: two letters swapped, or one left out.
+    ['typo-swap', typed('Parsi'), correct()],
+    ['typo-drop', typed('Pais'), correct()],
+    ['wrong', typed('Lyon'), incorrect()],
+    // Submitted with nothing in it: an answer, and a wrong one. Only a timeout is unanswered.
+    ['empty', typed(''), incorrect()],
+    ['spaces-only', typed('   '), incorrect()],
+    ['punctuation-only', typed('!!!'), incorrect()],
+    ['unanswered', null, unanswered()],
+    // Longer than any answer the app can send: refused before it is compared with anything.
+    ['over-length', typed('a'.repeat(257)), invalid('malformed')],
+    ['not-text', typed(5), invalid('malformed')],
+    [
+      'wrong-type',
+      { type: 'single_choice', response: { optionId: 'a' } },
+      invalid('type_mismatch'),
+    ],
+  ]),
+
+  ...cases(textQuestion(['The Beatles', 'Beatles']), [
+    ['leading-article', typed('beatles'), correct()],
+    ['alias', typed('Beatles'), correct()],
+  ]),
+  // "The" is an article in English only: Spanish content keeps it.
+  ...cases(
+    textQuestion(['The Beatles']),
+    [['article-other-locale', typed('Beatles'), incorrect()]],
+    {
+      locale: 'es',
+    },
+  ),
+  ...cases(textQuestion(['La Paz']), [['article-from-tunables', typed('Paz'), correct()]], {
+    locale: 'es-BO',
+    tunables: withSpanishArticles,
+  }),
+
+  // Eleven letters allow two slips, and no more.
+  ...cases(textQuestion(['Mississippi']), [
+    ['typo-two-edits', typed('Missisipi'), correct()],
+    ['typo-three-edits', typed('Misisipi'), incorrect()],
+  ]),
+  // Four letters allow none: one letter away is another country.
+  ...cases(textQuestion(['Iran']), [['short-answer-no-typos', typed('Iraq'), incorrect()]]),
+  // A slip is never forgiven in a digit.
+  ...cases(textQuestion(['Apollo 11']), [
+    ['digits-differ', typed('Apollo 12'), incorrect()],
+    ['digits-same', typed('Apolo 11'), correct()],
+  ]),
+  // Nor inside a number in any other way: the separator in it and its sign are part of it.
+  ...cases(textQuestion(['1.5 million']), [
+    ['number-separator-dropped', typed('15 million'), incorrect()],
+    ['number-separator-moved', typed('.15 million'), incorrect()],
+    // A decimal comma is the same number, and a slip beside a number is still a slip.
+    ['number-decimal-comma', typed('1,5 million'), correct()],
+    ['number-typo-beside', typed('1.5 milion'), correct()],
+  ]),
+  // A minus that begins a number is kept, whichever dash is typed for it. A hyphen that begins
+  // none only joins words.
+  ...cases(textQuestion(['-40 degrees']), [
+    ['minus-dropped', typed('40 degrees'), incorrect()],
+    ['minus-sign-for-hyphen', typed('\u221240 degrees'), correct()],
+  ]),
+  ...cases(textQuestion(['Apollo-11']), [['hyphen-before-number', typed('Apollo 11'), correct()]]),
+  ...cases(textQuestion(['Jean-Paul']), [['hyphen-between-words', typed('Jean Paul'), correct()]]),
+  // A Roman numeral is a number too: one letter more or fewer is another king.
+  ...cases(textQuestion(['Henry VIII']), [
+    ['roman-numeral-differs', typed('Henry VII'), incorrect()],
+    ['roman-numeral-typo-beside', typed('Hnery VIII'), correct()],
+  ]),
+  // A near-miss the author listed: wrong when typed exactly, and wrong when a slip is as close
+  // to it as to the answer.
+  ...cases(textQuestion(['Australia'], { rejected: ['Austria'] }), [
+    ['rejected-near-miss', typed('Austria'), incorrect()],
+    ['tie-with-rejected', typed('Austrlia'), incorrect()],
+    ['typo-clear-of-rejected', typed('Australa'), correct()],
+  ]),
+  ...cases(textQuestion(['Mississippi'], { maxTypos: 0 }), [
+    ['typos-off', typed('Missisippi'), incorrect()],
+  ]),
+  ...cases(textQuestion(['Łódź']), [['letter-fold', typed('Lodz'), correct()]]),
+  ...cases(textQuestion(['C++']), [
+    ['symbols-kept', typed('C'), incorrect()],
+    ['symbols-exact', typed('c++'), correct()],
+  ]),
+
+  // What the JavaScript engine decides: its case mappings and its Unicode tables. A device's
+  // engine runs these fixtures and no other test, so each case here is one that another engine
+  // could grade differently. The characters are written as escapes, so that no editor can
+  // recompose them, and each question allows no typos.
+  //
+  // "Strasse" with a sharp s (U+00DF): lower-casing keeps it, and upper-casing writes "SS".
+  ...cases(exactly(['Stra\u00dfe']), [
+    ['sharp-s-capitals', typed('STRASSE'), correct()],
+    ['sharp-s-double-s', typed('strasse'), correct()],
+  ]),
+  ...cases(exactly(['Strasse']), [['double-s-sharp-s', typed('Stra\u00dfe'), correct()]]),
+  // "Istanbul" with the dotted capital I (U+0130): lower-casing writes "i" and a combining dot.
+  ...cases(exactly(['\u0130stanbul']), [
+    ['dotted-capital-i', typed('istanbul'), correct()],
+    ['dotted-capital-i-capitals', typed('ISTANBUL'), correct()],
+  ]),
+  // The Greek word "odos", which ends in a final sigma (U+03C2): typed in capitals, then with
+  // the other sigma (U+03C3) at its end.
+  ...cases(exactly(['\u039f\u03b4\u03cc\u03c2']), [
+    ['final-sigma-capitals', typed('\u039f\u0394\u039f\u03a3'), correct()],
+    ['final-sigma-medial', typed('\u03bf\u03b4\u03bf\u03c3'), correct()],
+  ]),
+  // A sigma that is final only until the bracket after it is removed: the Greek word "kosmos",
+  // typed in capitals with a stray bracket inside it.
+  ...cases(exactly(['\u039a\u03cc\u03c3\u03bc\u03bf\u03c2']), [
+    ['final-sigma-before-bracket', typed('\u039a\u039f\u03a3(\u039c\u039f\u03a3)'), correct()],
+  ]),
+  // Compatibility forms: full-width letters, the "fi" ligature (U+FB01) and a zero-width space.
+  ...cases(exactly(['Tokyo']), [
+    ['full-width-letters', typed('\uff34\uff4f\uff4b\uff59\uff4f'), correct()],
+  ]),
+  ...cases(exactly(['Sofia']), [['ligature', typed('So\ufb01a'), correct()]]),
+  ...cases(exactly(['Paris']), [['zero-width-space', typed('Pa\u200bris'), correct()]]),
+  // "Athina" in Greek, keyed with one code point for the accented eta (U+03AE): typed as eta
+  // and a combining tonos (U+0301), then with no accent.
+  ...cases(exactly(['\u0391\u03b8\u03ae\u03bd\u03b1']), [
+    ['greek-combining-mark', typed('\u0391\u03b8\u03b7\u0301\u03bd\u03b1'), correct()],
+    ['greek-mark-left-out', typed('\u0391\u03b8\u03b7\u03bd\u03b1'), correct()],
+  ]),
+  // "Fyodor" in Russian, keyed with one code point for the letter yo (U+0451): typed as ye and
+  // a combining diaeresis (U+0308), then with a plain ye, the way it is usually written.
+  ...cases(exactly(['\u0424\u0451\u0434\u043e\u0440']), [
+    ['cyrillic-combining-mark', typed('\u0424\u0435\u0308\u0434\u043e\u0440'), correct()],
+    ['cyrillic-mark-left-out', typed('\u0424\u0435\u0434\u043e\u0440'), correct()],
+  ]),
+  // "Sao Tome" with its tilde and its acute, keyed decomposed: the same answer in NFC, one code
+  // point for each accented letter, and in NFD, a letter and a combining mark.
+  ...cases(exactly(['Sa\u0303o Tome\u0301']), [
+    ['composed-nfc', typed('S\u00e3o Tom\u00e9'), correct()],
+    ['decomposed-nfd', typed('Sa\u0303o Tome\u0301'), correct()],
+  ]),
+
+  // Numbers are read with no locale: either separator may group thousands or mark the decimals.
+  ...cases(numberQuestion(['1,000'], { value: 1000, tolerance: 0 }), [
+    ['number-plain', typed('1000'), correct()],
+    ['grouping-comma', typed('1,000'), correct()],
+    ['grouping-dot', typed('1.000'), correct()],
+    ['grouping-space', typed('1 000'), correct()],
+    ['number-trailing-zero', typed('1000.0'), correct()],
+    ['number-plus-sign', typed('+1000'), correct()],
+    ['number-off', typed('1001'), incorrect()],
+    ['number-words', typed('one thousand'), incorrect()],
+  ]),
+  ...cases(numberQuestion(['1,000', 'one thousand'], { value: 1000, tolerance: 0 }), [
+    ['number-alias-in-words', typed('One Thousand'), correct()],
+  ]),
+  // An accepted entry with a number in it that reads as no number: right when typed exactly,
+  // and no typo of it is forgiven, in the number or in the word beside it.
+  ...cases(numberQuestion(['1,500,000', '1.5 million'], { value: 1500000, tolerance: 0 }), [
+    ['alias-with-number', typed('1.5 million'), correct()],
+    ['alias-with-number-separator-dropped', typed('15 million'), incorrect()],
+    ['alias-with-number-other-word', typed('1.5 billion'), incorrect()],
+    ['alias-with-number-typo', typed('1.5 milion'), incorrect()],
+  ]),
+  // Text with a digit in it is judged as a number and as nothing else, at any length: a dash
+  // that is no minus, a sign left out and a letter that is no listed unit are all wrong.
+  ...cases(numberQuestion(['5'], { value: 5, tolerance: 0 }), [
+    ['number-after-dash', typed('\u20135'), incorrect()],
+    // Sentence punctuation after the number is no part of it: a phone types ". " on a double
+    // space. A bracket is no sentence punctuation.
+    ['number-full-stop', typed('5.'), correct()],
+    ['number-full-stop-and-space', typed('5. '), correct()],
+    ['number-exclamation', typed('5!'), correct()],
+    ['number-in-brackets', typed('(5)'), incorrect()],
+  ]),
+  ...cases(numberQuestion(['-5'], { value: -5, tolerance: 0 }), [
+    ['negative', typed('-5'), correct()],
+    ['negative-minus-sign', typed('\u22125'), correct()],
+    ['negative-sign-dropped', typed('(5)'), incorrect()],
+    ['negative-sign-dropped-full-stop', typed('5.'), incorrect()],
+  ]),
+  ...cases(numberQuestion(['123456789'], { value: 123456789, tolerance: 0 }), [
+    ['number-then-letter', typed('123456789k'), incorrect()],
+    ['unit-unlisted-long', typed('123456789 m'), incorrect()],
+  ]),
+  // Off the tolerance, and one character from the answer as text: "1.234.5" reads as 12345.
+  ...cases(numberQuestion(['1,234.5'], { value: 1234.5, tolerance: 0 }), [
+    ['number-both-separators', typed('1.234,5'), correct()],
+    ['number-separators-alike', typed('1.234.5'), incorrect()],
+  ]),
+  ...cases(numberQuestion(['3.14'], { value: 3.14, tolerance: 0.01 }), [
+    ['decimal-comma', typed('3,14'), correct()],
+    ['tolerance-edge', typed('3.15'), correct()],
+    ['tolerance-out', typed('3.16'), incorrect()],
+    // A typed number is judged as a number, never as a slip of the keyboard.
+    ['separator-dropped', typed('314'), incorrect()],
+  ]),
+  // 0.4 − 0.3 is a hair over 0.1 in binary. The bound is inclusive all the same.
+  ...cases(numberQuestion(['0.3'], { value: 0.3, tolerance: 0.1 }), [
+    ['binary-rounding', typed('0.4'), correct()],
+    ['binary-rounding-out', typed('0.41'), incorrect()],
+  ]),
+  ...cases(numberQuestion(['71%'], { value: 71, tolerance: 1, units: ['%', 'percent'] }), [
+    ['unit-symbol', typed('71%'), correct()],
+    ['unit-suffix', typed('70 percent'), correct()],
+    ['unit-unlisted', typed('71 km'), incorrect()],
+    ['unit-out', typed('72.5%'), incorrect()],
+  ]),
+];
